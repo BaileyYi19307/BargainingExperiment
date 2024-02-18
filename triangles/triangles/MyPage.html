@@ -1,0 +1,38 @@
+{{ block title }}
+    Page title
+{{ endblock }}
+{{ block content }}
+    <button id="btn" type="button" onclick="test()">Button</button>
+
+    <script>
+    function test() {
+        // Send a message to the server indicating the button was clicked
+        liveSend({button_clicked: true});
+    }
+
+    function liveRecv(data) {
+        if (data.change_color) {
+            var button = document.getElementById('btn');
+            if(button) {
+                button.style.backgroundColor = 'salmon';
+                button.style.color = 'white';
+            }
+        }
+    }
+    </script>
+
+
+    <style>
+        button{
+            width:50px;
+            height:50px;
+            border: 1px solid blue;
+            border-radius:50%;
+        }
+
+    </style>
+
+    {{ formfields }}
+    {{ next_button }}
+
+{{ endblock }}
