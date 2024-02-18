@@ -31,11 +31,13 @@ class MyPage(Page):
 
     #the server
     def live_method(player, data):
-        # Check if the message received indicates a button click
         if data.get('button_clicked'):
-            # Broadcast a message to all clients in the group to change the button color
-            return {1: {'change_color': True},
-                    2: {'change_color': True}}
+            colors = {1: 'red', 2: 'blue', 3:'green'}
+            player_id = player.id_in_group
+
+            player_color = colors.get(player_id, 'grey')
+
+            return {0: {'change_color': True, 'color': player_color}}
 
 
 page_sequence = [MyPage]
