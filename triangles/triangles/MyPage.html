@@ -6,17 +6,38 @@
 
     <script>
     function test() {
-        // Send a message to the server indicating the button was clicked
         liveSend({button_clicked: true});
     }
 
+    var borderColors = {
+        red: false,
+        blue: false,
+        green: false
+    };
+
     function liveRecv(data) {
-        if (data.change_color) {
-            var button = document.getElementById('btn');
-            if(button) {
-                button.style.backgroundColor = data.color;
-                button.style.color = 'white';
-            };
+        var button = document.getElementById('btn');
+        if (data.change_color && button) {
+            if (data.color === 'red' || data.color === 'blue' || data.color === 'green') {
+                borderColors[data.color] = true;
+            }
+
+            var boxShadowValue = [];
+            var offset = 0;
+
+            if (borderColors.red) {
+                boxShadowValue.push(`0 0 0 ${offset + 4}px red`);
+                offset += 4;
+            }
+            if (borderColors.blue) {
+                boxShadowValue.push(`0 0 0 ${offset + 4}px blue`);
+                offset += 4;
+            }
+            if (borderColors.green) {
+                boxShadowValue.push(`0 0 0 ${offset + 4}px green`);
+            }
+
+            button.style.boxShadow = boxShadowValue.join(', ');
         }
     }
     </script>
