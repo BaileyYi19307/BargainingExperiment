@@ -29,10 +29,9 @@ class Player(BasePlayer):
 class MyPage(Page):
     @staticmethod
 
-    #the server
     def live_method(player, data):
         if data.get('button_clicked'):
-            colors = {1: 'red', 2: 'blue', 3:'green'}
+            colors = {1: 'red', 2: 'blue', 3: 'green'}
             player_id = player.id_in_group
 
             player_color = colors.get(player_id, 'grey')
