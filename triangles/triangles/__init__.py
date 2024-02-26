@@ -28,15 +28,12 @@ class Player(BasePlayer):
 # PAGES
 class MyPage(Page):
     @staticmethod
-
-    def live_method(player, data):
+    def live_method(player: Player, data: dict):
+        # Simplify by directly using the incoming data without intermediate variables
         if data.get('button_clicked'):
-            colors = {1: 'red', 2: 'blue', 3: 'green'}
-            player_id = player.id_in_group
+            # Directly return the necessary information to all players in the group
+            return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
-            player_color = colors.get(player_id, 'grey')
-
-            return {0: {'change_color': True, 'color': player_color}}
 
 
 page_sequence = [MyPage]
