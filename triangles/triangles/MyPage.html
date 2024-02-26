@@ -2,6 +2,171 @@
     Page title
 {{ endblock }}
 {{ block content }}
+<div class="triangle">
+    <button id="btn1" type="button" onclick="test('btn1')"></button>
+    <button id="btn2" type="button" onclick="test('btn2')"></button>
+    <button id="btn3" type="button" onclick="test('btn3')"></button>
+</div>
+<div class="bottom">
+        <button id="btn4" type="button" onclick="test('btn4')"></button>
+</div>
+
+    <script>
+    function test(buttonId) {
+        liveSend({button_clicked: true, button_id:buttonId});
+    }
+    var borderColors = {
+    red: false,
+    blue: false,
+    green: false
+    };
+
+    // Object to track button states for each user
+    var buttonStates = {
+        btn1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
+        btn2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
+        btn3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
+        btn4: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false}
+    };
+
+
+function liveRecv(data) {
+    var button = document.getElementById(data.button_id);
+    var btnState = buttonStates[data.button_id];
+
+    //check if the player who clicked the button is player 1
+    var isPlayer1 = data.player_id === 1;
+
+    //player one clicked the button
+    if (isPlayer1) {
+        btnState.clickedByUser1 = !btnState.clickedByUser1; //select or deselect button for player 1, depending on prev state
+    } else if (data.player_id==2){ //player two clicked the button
+        btnState.clickedByUser2 = !btnState.clickedByUser2; //select or deselect button for player 2, depending on prev state
+    }
+    else if (data.player_id==3){
+        btnState.clickedByUser3 = !btnState.clickedByUser3; //select or deselect button for player 2, depending on prev state
+    }
+
+    //iterate over all other buttons to reset the clicked state for other buttons
+    Object.keys(buttonStates).forEach(function(otherButtonsId) {
+        //are we looking at a different button than the one we just clicked?
+        if (otherButtonsId !== data.button_id) {
+            //if yes, access state of other button
+            var otherBtnState = buttonStates[otherButtonsId];
+            if (isPlayer1) {
+                //if dealing with player one, reset clicked state on other button
+                otherBtnState.clickedByUser1 = false; // Reset Player 1's selections on other buttons
+            } else if(data.player_id == 2) {
+                //if dealing with player two, reset clicked state on other button
+                otherBtnState.clickedByUser2 = false; // Reset Player 2's selections on other buttons
+            }
+            else if (data.player_id==3){
+                otherBtnState.clickedByUser3=false;
+            }
+            //update visual appearance of other button based on its new state
+            updateButtonAppearance(document.getElementById(otherButtonsId), otherBtnState); // Update appearance based on state
+        }
+    });
+
+    // Update the appearance of the currently clicked button
+    updateButtonAppearance(button, btnState);
+}
+
+function updateButtonAppearance(button, btnState) {
+    //clear any existing border styles to start fresh
+    button.classList.remove('red-border', 'blue-border', 'red-blue','red-green','blue-green','green-border','all-borders');
+
+    // Apply new border classes based on the button state
+    if (btnState.clickedByUser1 && btnState.clickedByUser2 && btnState.clickedByUser3){
+        button.classList.add('all-borders');
+    }
+    else if (btnState.clickedByUser1 && btnState.clickedByUser2) {
+        button.classList.add('red-blue'); // Both players have selected the button
+    }
+    else if(btnState.clickedByUser1 && btnState.clickedByUser3){
+        button.classList.add('red-green');
+    }
+    else if(btnState.clickedByUser2 && btnState.clickedByUser3){
+        button.classList.add('blue-green');
+    }
+    else if (btnState.clickedByUser1) {
+        button.classList.add('red-border'); // Only Player 1 has selected the button, add red
+    } else if (btnState.clickedByUser2) {
+        button.classList.add('blue-border'); // Only Player 2 has selected the button, add blue
+    }
+    else if (btnState.clickedByUser3){
+        button.classList.add('green-border');
+    }
+}
+
+    </script>
+
+
+    <style>
+        #btn1,#btn2,#btn3,#btn4{
+            width:30px;
+            height:30px;
+            border-radius:50%;
+        }
+
+        .red-border{
+            border: 2px solid red;
+        }
+
+        .blue-border{
+            border: 2px solid blue;
+        }
+
+        .green-border{
+            border: 2px solid green;
+        }
+
+        .both-borders{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+        }
+
+        .red-blue{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+        }
+
+        .red-green{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
+        }
+
+        .green-blue{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+        }
+
+        .all-borders{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green; /* Create a purple border with red and blue shadows */
+        }
+
+        .triangle, .bottom{
+            display:flex;
+            flex-direction: row;
+            justify-content: center;
+            align-content: center;
+        }
+
+
+
+    </style>
+
+    {{ formfields }}
+    {{ next_button }}
+
+{{ endblock }}
+
+
+<!-- {{ block title }}
+    Page title
+{{ endblock }}
+{{ block content }}
     <button id="btn" type="button" onclick="test()">HI</button>
 
     <script>
@@ -57,3 +222,4 @@
     {{ next_button }}
 
 {{ endblock }}
+ -->
