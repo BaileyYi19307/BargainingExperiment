@@ -21,7 +21,6 @@
     green: false
     };
 
-    // Object to track button states for each user
     var buttonStates = {
         btn1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
         btn2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
@@ -34,30 +33,23 @@ function liveRecv(data) {
     var button = document.getElementById(data.button_id);
     var btnState = buttonStates[data.button_id];
 
-    //check if the player who clicked the button is player 1
     var isPlayer1 = data.player_id === 1;
 
-    //player one clicked the button
     if (isPlayer1) {
-        btnState.clickedByUser1 = !btnState.clickedByUser1; //select or deselect button for player 1, depending on prev state
-    } else if (data.player_id==2){ //player two clicked the button
-        btnState.clickedByUser2 = !btnState.clickedByUser2; //select or deselect button for player 2, depending on prev state
+        btnState.clickedByUser1 = !btnState.clickedByUser1;
+    } else if (data.player_id==2){
+        btnState.clickedByUser2 = !btnState.clickedByUser2;
     }
     else if (data.player_id==3){
-        btnState.clickedByUser3 = !btnState.clickedByUser3; //select or deselect button for player 2, depending on prev state
+        btnState.clickedByUser3 = !btnState.clickedByUser3;
     }
 
-    //iterate over all other buttons to reset the clicked state for other buttons
     Object.keys(buttonStates).forEach(function(otherButtonsId) {
-        //are we looking at a different button than the one we just clicked?
         if (otherButtonsId !== data.button_id) {
-            //if yes, access state of other button
             var otherBtnState = buttonStates[otherButtonsId];
             if (isPlayer1) {
-                //if dealing with player one, reset clicked state on other button
                 otherBtnState.clickedByUser1 = false; // Reset Player 1's selections on other buttons
             } else if(data.player_id == 2) {
-                //if dealing with player two, reset clicked state on other button
                 otherBtnState.clickedByUser2 = false; // Reset Player 2's selections on other buttons
             }
             else if (data.player_id==3){
@@ -72,29 +64,24 @@ function liveRecv(data) {
     updateButtonAppearance(button, btnState);
 }
 
-function updateButtonAppearance(button, btnState) {
-    //clear any existing border styles to start fresh
-    button.classList.remove('red-border', 'blue-border', 'red-blue','red-green','blue-green','green-border','all-borders');
 
-    // Apply new border classes based on the button state
-    if (btnState.clickedByUser1 && btnState.clickedByUser2 && btnState.clickedByUser3){
+
+function updateButtonAppearance(button, btnState) {
+    button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'all-borders');
+
+    if (btnState.clickedByUser1 && btnState.clickedByUser2 && btnState.clickedByUser3) {
         button.classList.add('all-borders');
-    }
-    else if (btnState.clickedByUser1 && btnState.clickedByUser2) {
-        button.classList.add('red-blue'); // Both players have selected the button
-    }
-    else if(btnState.clickedByUser1 && btnState.clickedByUser3){
+    } else if (btnState.clickedByUser1 && btnState.clickedByUser2) {
+        button.classList.add('red-blue');
+    } else if (btnState.clickedByUser1 && btnState.clickedByUser3) {
         button.classList.add('red-green');
-    }
-    else if(btnState.clickedByUser2 && btnState.clickedByUser3){
-        button.classList.add('blue-green');
-    }
-    else if (btnState.clickedByUser1) {
-        button.classList.add('red-border'); // Only Player 1 has selected the button, add red
+    } else if (btnState.clickedByUser2 && btnState.clickedByUser3) {
+        button.classList.add('green-blue');
+    } else if (btnState.clickedByUser1) {
+        button.classList.add('red-border');
     } else if (btnState.clickedByUser2) {
-        button.classList.add('blue-border'); // Only Player 2 has selected the button, add blue
-    }
-    else if (btnState.clickedByUser3){
+        button.classList.add('blue-border');
+    } else if (btnState.clickedByUser3) {
         button.classList.add('green-border');
     }
 }
@@ -161,65 +148,3 @@ function updateButtonAppearance(button, btnState) {
     {{ next_button }}
 
 {{ endblock }}
-
-
-<!-- {{ block title }}
-    Page title
-{{ endblock }}
-{{ block content }}
-    <button id="btn" type="button" onclick="test()">HI</button>
-
-    <script>
-    function test() {
-        liveSend({button_clicked: true});
-    }
-
-    var borderColors = {
-        red: false,
-        blue: false,
-        green: false
-    };
-
-    function liveRecv(data) {
-        var button = document.getElementById('btn');
-        if (data.change_color && button) {
-            if (data.color === 'red' || data.color === 'blue' || data.color === 'green') {
-                borderColors[data.color] = true;
-            }
-
-            var boxShadowValue = [];
-            var offset = 0;
-
-            if (borderColors.red) {
-                boxShadowValue.push(`0 0 0 ${offset + 4}px red`);
-                offset += 4;
-            }
-            if (borderColors.blue) {
-                boxShadowValue.push(`0 0 0 ${offset + 4}px blue`);
-                offset += 4;
-            }
-            if (borderColors.green) {
-                boxShadowValue.push(`0 0 0 ${offset + 4}px green`);
-            }
-
-            button.style.boxShadow = boxShadowValue.join(', ');
-        }
-    }
-    </script>
-
-
-    <style>
-        #btn{
-            width:30px;
-            height:30px;
-            border: 1px solid transparent;
-            border-radius:50%;
-        }
-
-    </style>
-
-    {{ formfields }}
-    {{ next_button }}
-
-{{ endblock }}
- -->
