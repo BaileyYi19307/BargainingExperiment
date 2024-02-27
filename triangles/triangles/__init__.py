@@ -29,9 +29,7 @@ class Player(BasePlayer):
 class MyPage(Page):
     @staticmethod
     def live_method(player: Player, data: dict):
-        # Simplify by directly using the incoming data without intermediate variables
         if data.get('button_clicked'):
-            # Directly return the necessary information to all players in the group
             return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
 
