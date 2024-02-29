@@ -12,6 +12,8 @@
 </div>
 
     <script>
+
+
     function test(buttonId) {
         liveSend({button_clicked: true, button_id:buttonId});
     }
@@ -33,58 +35,70 @@ function liveRecv(data) {
     var button = document.getElementById(data.button_id);
     var btnState = buttonStates[data.button_id];
 
-    var isPlayer1 = data.player_id === 1;
-
-    if (isPlayer1) {
+    if (data.player_id === 1) {
         btnState.clickedByUser1 = !btnState.clickedByUser1;
-    } else if (data.player_id==2){
+    } else if (data.player_id == 2) {
         btnState.clickedByUser2 = !btnState.clickedByUser2;
-    }
-    else if (data.player_id==3){
+    } else if (data.player_id == 3) {
         btnState.clickedByUser3 = !btnState.clickedByUser3;
     }
 
-    Object.keys(buttonStates).forEach(function(otherButtonsId) {
-        if (otherButtonsId !== data.button_id) {
-            var otherBtnState = buttonStates[otherButtonsId];
-            if (isPlayer1) {
-                otherBtnState.clickedByUser1 = false; // Reset Player 1's selections on other buttons
-            } else if(data.player_id == 2) {
-                otherBtnState.clickedByUser2 = false; // Reset Player 2's selections on other buttons
+    // Reset states for player who moved to different button
+    Object.keys(buttonStates).forEach(function(otherButtonId) {
+        if (otherButtonId !== data.button_id) {
+            var otherBtnState = buttonStates[otherButtonId];
+            if (data.player_id === 1) {
+                otherBtnState.clickedByUser1 = false;
+            } else if (data.player_id == 2) {
+                otherBtnState.clickedByUser2 = false;
+            } else if (data.player_id == 3) {
+                otherBtnState.clickedByUser3 = false;
             }
-            else if (data.player_id==3){
-                otherBtnState.clickedByUser3=false;
-            }
-            //update visual appearance of other button based on its new state
-            updateButtonAppearance(document.getElementById(otherButtonsId), otherBtnState); // Update appearance based on state
+            updateButtonAppearance(document.getElementById(otherButtonId), otherBtnState);
         }
     });
 
-    // Update the appearance of the currently clicked button
+    // update the appearance of currently clicked button
     updateButtonAppearance(button, btnState);
 }
 
-
-
 function updateButtonAppearance(button, btnState) {
-    button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'all-borders');
+    button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
 
-    if (btnState.clickedByUser1 && btnState.clickedByUser2 && btnState.clickedByUser3) {
+    var playerColor = { // color of players depending on different player's points of views
+        1: {1: 'green', 2: 'blue', 3: 'red'},
+        2: {1: 'blue', 2: 'green', 3: 'red'},
+        3: {1: 'red', 2: 'blue', 3: 'green'}
+    };
+
+    function getColorBorderClass(playerNum) {
+        return playerColor[window.playerId][playerNum] + '-border';
+    }
+
+    function getCombinedColorClass(playerNum1, playerNum2) {
+        var colors = [playerColor[window.playerId][playerNum1], playerColor[window.playerId][playerNum2]].sort();
+        return colors.join('-');
+    }
+
+    // handling color combinations
+    var activePlayers = [];
+    if (btnState.clickedByUser1) activePlayers.push(1);
+    if (btnState.clickedByUser2) activePlayers.push(2);
+    if (btnState.clickedByUser3) activePlayers.push(3);
+
+    if (activePlayers.length === 3) {
         button.classList.add('all-borders');
-    } else if (btnState.clickedByUser1 && btnState.clickedByUser2) {
-        button.classList.add('red-blue');
-    } else if (btnState.clickedByUser1 && btnState.clickedByUser3) {
-        button.classList.add('red-green');
-    } else if (btnState.clickedByUser2 && btnState.clickedByUser3) {
-        button.classList.add('green-blue');
-    } else if (btnState.clickedByUser1) {
-        button.classList.add('red-border');
-    } else if (btnState.clickedByUser2) {
-        button.classList.add('blue-border');
-    } else if (btnState.clickedByUser3) {
-        button.classList.add('green-border');
+    } else if (activePlayers.length === 2) {
+        button.classList.add(getCombinedColorClass(activePlayers[0], activePlayers[1]));
+    } else if (activePlayers.length === 1) {
+        button.classList.add(getColorBorderClass(activePlayers[0]));
     }
 }
+
+// get and store the player's ID
+window.playerId = {{ player.id_in_group }};
+
+
 
     </script>
 
@@ -108,10 +122,10 @@ function updateButtonAppearance(button, btnState) {
             border: 2px solid green;
         }
 
-        .both-borders{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-        }
+        /*.both-borders{*/
+        /*    border: none; !* Remove default border *!*/
+        /*    box-shadow: 0 0 0 2px red, 0 0 0 4px blue; !* Create a purple border with red and blue shadows *!*/
+        /*}*/
 
         .red-blue{
             border: none; /* Remove default border */
@@ -124,6 +138,21 @@ function updateButtonAppearance(button, btnState) {
         }
 
         .green-blue{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+        }
+
+        .blue-red{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+        }
+
+        .green-red{
+            border: none; /* Remove default border */
+            box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
+        }
+
+        .blue-green{
             border: none; /* Remove default border */
             box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
         }
