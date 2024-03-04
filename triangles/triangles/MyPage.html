@@ -2,13 +2,30 @@
     Page title
 {{ endblock }}
 {{ block content }}
-<div class="triangle">
-    <button id="btn1" type="button" onclick="test('btn1')"></button>
-    <button id="btn2" type="button" onclick="test('btn2')"></button>
-    <button id="btn3" type="button" onclick="test('btn3')"></button>
+
+<div id="player-values">
+    P1: <span id="p1-value">__</span>
+    P2: <span id="p2-value">__</span>
+    P3: <span id="p3-value">__</span>
 </div>
-<div class="bottom">
-        <button id="btn4" type="button" onclick="test('btn4')"></button>
+
+<div class="lv1 layers">
+    <button id="btn0_3_0" class="button" type="button" onclick="test('btn0_3_0')"></button>
+    <button id="btn0_2_1" class="button" type="button" onclick="test('btn0_2_1')"></button>
+    <button id="btn0_1_2" class="button" type="button" onclick="test('btn0_1_2')"></button>
+    <button id="btn0_0_3" class="button" type="button" onclick="test('btn0_0_3')"></button>
+</div>
+<div class="lv2 layers">
+    <button id="btn1_2_0" class="button" type="button" onclick="test('btn1_2_0')"></button>
+    <button id="btn1_1_1" class="button" type="button" onclick="test('btn1_1_1')"></button>
+    <button id="btn1_0_2" class="button" type="button" onclick="test('btn1_0_2')"></button>
+</div>
+<div class="lv3 layers">
+    <button id="btn2_1_0" class="button" type="button" onclick="test('btn2_1_0')"></button>
+    <button id="btn2_0_1" class="button" type="button" onclick="test('btn2_0_1')"></button>
+</div>
+<div class="lv4 layers">
+    <button id="btn3_0_0" class="button" type="button" onclick="test('btn3_0_0')"></button>
 </div>
 
     <script>
@@ -24,12 +41,25 @@
     };
 
     var buttonStates = {
-        btn1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
-        btn2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
-        btn3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false},
-        btn4: { clickedByUser1: false, clickedByUser2: false, clickedByUser3:false}
+        btn0_3_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn0_2_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn0_1_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn0_0_3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn1_2_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn1_1_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn1_0_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn2_1_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn2_0_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn3_0_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false}
     };
 
+    function setPlayerValues(buttonId) {
+        var values = buttonId.replace('btn', '').split('_').map(Number);
+
+        document.getElementById('p1-value').textContent = values[0];
+        document.getElementById('p2-value').textContent = values[1];
+        document.getElementById('p3-value').textContent = values[2];
+    }
 
 function liveRecv(data) {
     var button = document.getElementById(data.button_id);
@@ -60,13 +90,16 @@ function liveRecv(data) {
 
     // update the appearance of currently clicked button
     updateButtonAppearance(button, btnState);
+    if (data.player_id === window.playerId) {
+        setPlayerValues(data.button_id);
+    }
 }
 
 function updateButtonAppearance(button, btnState) {
     button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
 
     var playerColor = { // color of players depending on different player's points of views
-        1: {1: 'green', 2: 'blue', 3: 'red'},
+        1: {1: 'green', 2: 'red', 3: 'blue'},
         2: {1: 'blue', 2: 'green', 3: 'red'},
         3: {1: 'red', 2: 'blue', 3: 'green'}
     };
@@ -104,7 +137,7 @@ window.playerId = {{ player.id_in_group }};
 
 
     <style>
-        #btn1,#btn2,#btn3,#btn4{
+        .button{
             width:30px;
             height:30px;
             border-radius:50%;
@@ -162,7 +195,7 @@ window.playerId = {{ player.id_in_group }};
             box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green; /* Create a purple border with red and blue shadows */
         }
 
-        .triangle, .bottom{
+        .layers{
             display:flex;
             flex-direction: row;
             justify-content: center;
