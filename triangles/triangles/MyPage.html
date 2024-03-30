@@ -9,127 +9,189 @@
     P3: <span id="p3-value">__</span>
 </div>
 
-<div class="lv1 layers">
-    <button id="btn0_3_0" class="button" type="button" onclick="test('btn0_3_0')"></button>
-    <button id="btn0_2_1" class="button" type="button" onclick="test('btn0_2_1')"></button>
-    <button id="btn0_1_2" class="button" type="button" onclick="test('btn0_1_2')"></button>
-    <button id="btn0_0_3" class="button" type="button" onclick="test('btn0_0_3')"></button>
-</div>
-<div class="lv2 layers">
-    <button id="btn1_2_0" class="button" type="button" onclick="test('btn1_2_0')"></button>
-    <button id="btn1_1_1" class="button" type="button" onclick="test('btn1_1_1')"></button>
-    <button id="btn1_0_2" class="button" type="button" onclick="test('btn1_0_2')"></button>
-</div>
-<div class="lv3 layers">
-    <button id="btn2_1_0" class="button" type="button" onclick="test('btn2_1_0')"></button>
-    <button id="btn2_0_1" class="button" type="button" onclick="test('btn2_0_1')"></button>
-</div>
-<div class="lv4 layers">
-    <button id="btn3_0_0" class="button" type="button" onclick="test('btn3_0_0')"></button>
-</div>
-
-    <script>
+<div class="parent-container"><div id="triangleContainer">
+</div></div>
 
 
-    function test(buttonId) {
-        liveSend({button_clicked: true, button_id:buttonId});
-    }
-    var borderColors = {
-    red: false,
-    blue: false,
-    green: false
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    var totalNodes = 10; // define total num of circles
+    var totalPoints = 12; // define total num of points to distribute
+    generateTriangle(totalNodes, totalPoints);
+
+});
+
+function generateTriangle(n, points) {
+    const container = document.getElementById('triangleContainer');
+
+    //calculated the max number of rows here based on n circles in a triangle
+    const numRows = Math.sqrt(2 * n + 0.25) - 0.5;
+
+    //initialized global point counters for each side of the triangle - unimportant
+    var bottomPGlobal =0
+    var leftPGlobal = (points-3)/3;
+    var rightPGlobal = 0;
+
+    // defined mappings for each player's perspective
+    // i.e. for player 2, they'll see what player 1 sees as a right point (rightP) as the bottom point (bottomP)
+    const mappings = {
+        1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}), // Player 1 sees as is
+        2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}), // Player 2 mapping
+        3: (bottomP, leftP, rightP) =>  ({bottomP: leftP, leftP: rightP, rightP: bottomP})// Player 3 mapping
     };
 
-    var buttonStates = {
-        btn0_3_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn0_2_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn0_1_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn0_0_3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn1_2_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn1_1_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn1_0_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn2_1_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn2_0_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn3_0_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false}
-    };
+    //retrieved point mapping for current player
+    const mapPoints = mappings[window.playerId];
 
-    function setPlayerValues(buttonId) {
-        var values = buttonId.replace('btn', '').split('_').map(Number);
+    //loop to create each row of the triangle (starting from top of triangle (row with most circles) --> down)
+    for (var rowNum = numRows; rowNum >=1; rowNum--) {
+        const rowDiv = document.createElement('div'); //created new div for row
+        rowDiv.className = 'triangle-row';
 
-        document.getElementById('p1-value').textContent = values[0];
-        document.getElementById('p2-value').textContent = values[1];
-        document.getElementById('p3-value').textContent = values[2];
-    }
+        //initialize point counters for the current row
+        var bottomP = bottomPGlobal;
+        var leftP = leftPGlobal;
+        var rightP = rightPGlobal;
 
-function liveRecv(data) {
-    var button = document.getElementById(data.button_id);
-    var btnState = buttonStates[data.button_id];
+        // loop to create each cirlce in a row
+        for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
 
-    if (data.player_id === 1) {
-        btnState.clickedByUser1 = !btnState.clickedByUser1;
-    } else if (data.player_id == 2) {
-        btnState.clickedByUser2 = !btnState.clickedByUser2;
-    } else if (data.player_id == 3) {
-        btnState.clickedByUser3 = !btnState.clickedByUser3;
-    }
+            //mapping the points being displayed on the button based on which player it is
+            const {bottomP: displayBottomP, leftP: displayLeftP, rightP: displayRightP} = mapPoints(bottomP, leftP, rightP);
 
-    // Reset states for player who moved to different button
-    Object.keys(buttonStates).forEach(function(otherButtonId) {
-        if (otherButtonId !== data.button_id) {
-            var otherBtnState = buttonStates[otherButtonId];
-            if (data.player_id === 1) {
-                otherBtnState.clickedByUser1 = false;
-            } else if (data.player_id == 2) {
-                otherBtnState.clickedByUser2 = false;
-            } else if (data.player_id == 3) {
-                otherBtnState.clickedByUser3 = false;
-            }
-            updateButtonAppearance(document.getElementById(otherButtonId), otherBtnState);
+            const button = document.createElement('button');
+
+            //initialize properties of the circle
+            button.innerText = `(${displayBottomP},${displayLeftP},${displayRightP})`;
+            button.style.fontSize = '8px';
+
+            button.id = `btn${displayBottomP}_${displayLeftP}_${displayRightP}`;
+            button.className = 'button';
+            button.type='button';
+            button.addEventListener('click', function() {
+                    test(button.id);
+            });
+            rowDiv.appendChild(button);
+
+            //if it's not the last circle (very bottom vertex)
+            //adjust the points to initialize the next button with in the current row
+            if (rowNum !== 1) {
+                    leftP--;
+                    rightP++;
+                }
         }
-    });
 
-    // update the appearance of currently clicked button
-    updateButtonAppearance(button, btnState);
-    if (data.player_id === window.playerId) {
-        setPlayerValues(data.button_id);
+        //add the current row to the triangle
+        container.appendChild(rowDiv);
+
+        //updating the global point counters for the next row
+        bottomPGlobal++;
+        leftPGlobal--;
+
     }
 }
 
-function updateButtonAppearance(button, btnState) {
-    button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
 
-    var playerColor = { // color of players depending on different player's points of views
-        1: {1: 'green', 2: 'red', 3: 'blue'},
-        2: {1: 'blue', 2: 'green', 3: 'red'},
-        3: {1: 'red', 2: 'blue', 3: 'green'}
-    };
+        function test(buttonId) {
+            liveSend({button_clicked: true, button_id:buttonId});
+        }
+        var borderColors = {
+        red: false,
+        blue: false,
+        green: false
+        };
 
-    function getColorBorderClass(playerNum) {
-        return playerColor[window.playerId][playerNum] + '-border';
+        var buttonStates = {
+            btn0_3_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn0_2_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn0_1_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn0_0_3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn1_2_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn1_1_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn1_0_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn2_1_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn2_0_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+            btn3_0_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false}
+        };
+
+        function setPlayerValues(buttonId) {
+            var values = buttonId.replace('btn', '').split('_').map(Number);
+
+            document.getElementById('p1-value').textContent = values[0];
+            document.getElementById('p2-value').textContent = values[1];
+            document.getElementById('p3-value').textContent = values[2];
+        }
+
+    function liveRecv(data) {
+        var button = document.getElementById(data.button_id);
+        var btnState = buttonStates[data.button_id];
+
+        if (data.player_id === 1) {
+            btnState.clickedByUser1 = !btnState.clickedByUser1;
+        } else if (data.player_id == 2) {
+            btnState.clickedByUser2 = !btnState.clickedByUser2;
+        } else if (data.player_id == 3) {
+            btnState.clickedByUser3 = !btnState.clickedByUser3;
+        }
+
+        // Reset states for player who moved to different button
+        Object.keys(buttonStates).forEach(function(otherButtonId) {
+            if (otherButtonId !== data.button_id) {
+                var otherBtnState = buttonStates[otherButtonId];
+                if (data.player_id === 1) {
+                    otherBtnState.clickedByUser1 = false;
+                } else if (data.player_id == 2) {
+                    otherBtnState.clickedByUser2 = false;
+                } else if (data.player_id == 3) {
+                    otherBtnState.clickedByUser3 = false;
+                }
+                updateButtonAppearance(document.getElementById(otherButtonId), otherBtnState);
+            }
+        });
+
+        // update the appearance of currently clicked button
+        updateButtonAppearance(button, btnState);
+        if (data.player_id === window.playerId) {
+            setPlayerValues(data.button_id);
+        }
     }
 
-    function getCombinedColorClass(playerNum1, playerNum2) {
-        var colors = [playerColor[window.playerId][playerNum1], playerColor[window.playerId][playerNum2]].sort();
-        return colors.join('-');
+    function updateButtonAppearance(button, btnState) {
+        button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
+
+        var playerColor = { // color of players depending on different player's points of views
+            1: {1: 'green', 2: 'red', 3: 'blue'},
+            2: {1: 'blue', 2: 'green', 3: 'red'},
+            3: {1: 'red', 2: 'blue', 3: 'green'}
+        };
+
+        function getColorBorderClass(playerNum) {
+            return playerColor[window.playerId][playerNum] + '-border';
+        }
+
+        function getCombinedColorClass(playerNum1, playerNum2) {
+            var colors = [playerColor[window.playerId][playerNum1], playerColor[window.playerId][playerNum2]].sort();
+            return colors.join('-');
+        }
+
+        // handling color combinations
+        var activePlayers = [];
+        if (btnState.clickedByUser1) activePlayers.push(1);
+        if (btnState.clickedByUser2) activePlayers.push(2);
+        if (btnState.clickedByUser3) activePlayers.push(3);
+
+        if (activePlayers.length === 3) {
+            button.classList.add('all-borders');
+        } else if (activePlayers.length === 2) {
+            button.classList.add(getCombinedColorClass(activePlayers[0], activePlayers[1]));
+        } else if (activePlayers.length === 1) {
+            button.classList.add(getColorBorderClass(activePlayers[0]));
+        }
     }
 
-    // handling color combinations
-    var activePlayers = [];
-    if (btnState.clickedByUser1) activePlayers.push(1);
-    if (btnState.clickedByUser2) activePlayers.push(2);
-    if (btnState.clickedByUser3) activePlayers.push(3);
-
-    if (activePlayers.length === 3) {
-        button.classList.add('all-borders');
-    } else if (activePlayers.length === 2) {
-        button.classList.add(getCombinedColorClass(activePlayers[0], activePlayers[1]));
-    } else if (activePlayers.length === 1) {
-        button.classList.add(getColorBorderClass(activePlayers[0]));
-    }
-}
-
-// get and store the player's ID
-window.playerId = {{ player.id_in_group }};
+    // get and store the player's ID
+    window.playerId = {{ player.id_in_group }};
 
 
 
@@ -137,6 +199,14 @@ window.playerId = {{ player.id_in_group }};
 
 
     <style>
+
+
+
+        .triangle-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
         .button{
             width:30px;
             height:30px;
