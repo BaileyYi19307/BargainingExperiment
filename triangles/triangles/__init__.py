@@ -27,6 +27,16 @@ class Player(BasePlayer):
 
 # PAGES
 class MyPage(Page):
+    class MyPage(Page):
+        @staticmethod
+        def vars_for_template(player: Player):
+            n = 10
+            points = 12
+            return {
+                'total_nodes': n,
+                'total_points': points
+            }
+
     @staticmethod
     def live_method(player: Player, data: dict):
         if data.get('button_clicked'):
