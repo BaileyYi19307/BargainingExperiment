@@ -37,10 +37,15 @@ class MyPage(Page):
                 'total_points': points
             }
 
-    @staticmethod
-    def live_method(player: Player, data: dict):
-        if data.get('button_clicked'):
-            return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
+        @staticmethod
+        def live_method(player: Player, data: dict):
+            if data.get('button_clicked'):
+                player_positions = data['player_positions']
+                all_positions = list(player_positions.values())
+                if all_positions.count(all_positions[0]) == 3 and all_positions[0] is not None:
+                    return {0: {'all_agreed': True}}
+                else:
+                    return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
 
 
