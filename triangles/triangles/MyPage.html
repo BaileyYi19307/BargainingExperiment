@@ -1,127 +1,159 @@
 {{ block title }}
-    Page title
+    Experiment
 {{ endblock }}
 {{ block content }}
 
-<div id="player-values">
-    P1: <span id="p1-value">__</span>
-    P2: <span id="p2-value">__</span>
-    P3: <span id="p3-value">__</span>
+<div class="header-container">
+    <div class="player-values">
+        P1: <span id="p1-value">0</span>
+        P2: <span id="p2-value">0</span>
+        P3: <span id="p3-value">3</span>
+    </div>
+    <div id="timer">
+        Time left: 01:00
+    </div>
 </div>
 
-<div class="parent-container"><div id="triangleContainer">
-</div></div>
+<div class="parent-container">
+    <div id="triangleContainer">
+    </div>
+</div>
 
 
 <script>
 
-document.addEventListener('DOMContentLoaded', function() {
-    var totalNodes = 10; // define total num of circles
-    var totalPoints = 12; // define total num of points to distribute
-    generateTriangle(totalNodes, totalPoints);
+    document.addEventListener('DOMContentLoaded', function() {
+        var totalNodes = 10; // define total num of circles
+        var totalPoints = 12; // define total num of points to distribute
+        generateTriangle(totalNodes, totalPoints);
+        startTimer(10);     // timeout timer
+    });
 
-});
+    // move to next page when time out
+    function startTimer(duration) {
+        var display = document.getElementById('timer');
+        var timer = duration, minutes, seconds;
+        var interval = setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
 
-function generateTriangle(n, points) {
-    const container = document.getElementById('triangleContainer');
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
 
-    //calculated the max number of rows here based on n circles in a triangle
-    const numRows = Math.sqrt(2 * n + 0.25) - 0.5;
+            display.textContent = 'Time left: ' + minutes + ":" + seconds;
 
-    //initialized global point counters for each side of the triangle - unimportant
-    var bottomPGlobal =0
-    var leftPGlobal = (points-3)/3;
-    var rightPGlobal = 0;
+            if (--timer < 0) {
+                clearInterval(interval);
+                var form = document.querySelector('form');
+                if(form) {
+                    form.submit();
+                }
+            }
+        }, 1000);
+    }
 
-    // defined mappings for each player's perspective
-    // i.e. for player 2, they'll see what player 1 sees as a right point (rightP) as the bottom point (bottomP)
-    const mappings = {
-        1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}), // Player 1 sees as is
-        2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}), // Player 2 mapping
-        3: (bottomP, leftP, rightP) =>  ({bottomP: leftP, leftP: rightP, rightP: bottomP})// Player 3 mapping
+
+    function generateTriangle(n, points) {
+        const container = document.getElementById('triangleContainer');
+
+        //calculated the max number of rows here based on n circles in a triangle
+        const numRows = Math.sqrt(2 * n + 0.25) - 0.5;
+
+        //initialized global point counters for each side of the triangle - unimportant
+        var bottomPGlobal =0
+        var leftPGlobal = (points-3)/3;
+        var rightPGlobal = 0;
+
+        // defined mappings for each player's perspective
+        // i.e. for player 2, they'll see what player 1 sees as a right point (rightP) as the bottom point (bottomP)
+        const mappings = {
+            1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}), // Player 1 sees as is
+            2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}), // Player 2 mapping
+            3: (bottomP, leftP, rightP) =>  ({bottomP: leftP, leftP: rightP, rightP: bottomP})// Player 3 mapping
+        };
+
+        //retrieved point mapping for current player
+        const mapPoints = mappings[window.playerId];
+
+        //loop to create each row of the triangle (starting from top of triangle (row with most circles) --> down)
+        for (var rowNum = numRows; rowNum >=1; rowNum--) {
+            const rowDiv = document.createElement('div'); //created new div for row
+            rowDiv.className = 'triangle-row';
+
+            //initialize point counters for the current row
+            var bottomP = bottomPGlobal;
+            var leftP = leftPGlobal;
+            var rightP = rightPGlobal;
+
+            // loop to create each cirlce in a row
+            for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
+
+                //mapping the points being displayed on the button based on which player it is
+                const {bottomP: displayBottomP, leftP: displayLeftP, rightP: displayRightP} = mapPoints(bottomP, leftP, rightP);
+
+                const button = document.createElement('button');
+
+                //initialize properties of the circle
+                button.innerText = `(${displayBottomP},${displayLeftP},${displayRightP})`;
+                button.style.fontSize = '8px';
+
+                button.id = `btn${displayBottomP}_${displayLeftP}_${displayRightP}`;
+                button.className = 'button';
+                button.type='button';
+                button.addEventListener('click', function() {
+                        test(button.id);
+                });
+                console.log(`Event listener attached to ${button.id}`); // debugging
+                rowDiv.appendChild(button);
+
+                //if it's not the last circle (very bottom vertex)
+                //adjust the points to initialize the next button with in the current row
+                if (rowNum !== 1) {
+                        leftP--;
+                        rightP++;
+                    }
+            }
+
+            //add the current row to the triangle
+            container.appendChild(rowDiv);
+
+            //updating the global point counters for the next row
+            bottomPGlobal++;
+            leftPGlobal--;
+
+        }
+    }
+
+
+    function test(buttonId) {
+        liveSend({button_clicked: true, button_id:buttonId});
+    }
+    var borderColors = {
+    red: false,
+    blue: false,
+    green: false
     };
 
-    //retrieved point mapping for current player
-    const mapPoints = mappings[window.playerId];
+    var buttonStates = {
+        btn0_3_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn0_2_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn0_1_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn0_0_3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn1_2_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn1_1_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn1_0_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn2_1_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn2_0_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
+        btn3_0_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false}
+    };
 
-    //loop to create each row of the triangle (starting from top of triangle (row with most circles) --> down)
-    for (var rowNum = numRows; rowNum >=1; rowNum--) {
-        const rowDiv = document.createElement('div'); //created new div for row
-        rowDiv.className = 'triangle-row';
+    function setPlayerValues(buttonId) {
+        var values = buttonId.replace('btn', '').split('_').map(Number);
 
-        //initialize point counters for the current row
-        var bottomP = bottomPGlobal;
-        var leftP = leftPGlobal;
-        var rightP = rightPGlobal;
-
-        // loop to create each cirlce in a row
-        for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
-
-            //mapping the points being displayed on the button based on which player it is
-            const {bottomP: displayBottomP, leftP: displayLeftP, rightP: displayRightP} = mapPoints(bottomP, leftP, rightP);
-
-            const button = document.createElement('button');
-
-            //initialize properties of the circle
-            button.innerText = `(${displayBottomP},${displayLeftP},${displayRightP})`;
-            button.style.fontSize = '8px';
-
-            button.id = `btn${displayBottomP}_${displayLeftP}_${displayRightP}`;
-            button.className = 'button';
-            button.type='button';
-            button.addEventListener('click', function() {
-                    test(button.id);
-            });
-            rowDiv.appendChild(button);
-
-            //if it's not the last circle (very bottom vertex)
-            //adjust the points to initialize the next button with in the current row
-            if (rowNum !== 1) {
-                    leftP--;
-                    rightP++;
-                }
-        }
-
-        //add the current row to the triangle
-        container.appendChild(rowDiv);
-
-        //updating the global point counters for the next row
-        bottomPGlobal++;
-        leftPGlobal--;
-
+        document.getElementById('p1-value').textContent = values[0];
+        document.getElementById('p2-value').textContent = values[1];
+        document.getElementById('p3-value').textContent = values[2];
     }
-}
-
-
-        function test(buttonId) {
-            liveSend({button_clicked: true, button_id:buttonId});
-        }
-        var borderColors = {
-        red: false,
-        blue: false,
-        green: false
-        };
-
-        var buttonStates = {
-            btn0_3_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn0_2_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn0_1_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn0_0_3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn1_2_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn1_1_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn1_0_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn2_1_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn2_0_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-            btn3_0_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false}
-        };
-
-        function setPlayerValues(buttonId) {
-            var values = buttonId.replace('btn', '').split('_').map(Number);
-
-            document.getElementById('p1-value').textContent = values[0];
-            document.getElementById('p2-value').textContent = values[1];
-            document.getElementById('p3-value').textContent = values[2];
-        }
 
     function liveRecv(data) {
         var button = document.getElementById(data.button_id);
@@ -194,89 +226,98 @@ function generateTriangle(n, points) {
     window.playerId = {{ player.id_in_group }};
 
 
-
-    </script>
-
-
-    <style>
+</script>
 
 
+<style>
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        .triangle-row {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .button{
-            width:30px;
-            height:30px;
-            border-radius:50%;
-        }
+    .player-values, #timer {
+        margin: 0;
+        padding: 0;
+        font-size: 20px;
+    }
 
-        .red-border{
-            border: 2px solid red;
-        }
+    .triangle-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .button{
+        width:30px;
+        height:30px;
+        border-radius:50%;
+    }
 
-        .blue-border{
-            border: 2px solid blue;
-        }
+    .red-border{
+        border: 2px solid red;
+    }
 
-        .green-border{
-            border: 2px solid green;
-        }
+    .blue-border{
+        border: 2px solid blue;
+    }
 
-        /*.both-borders{*/
-        /*    border: none; !* Remove default border *!*/
-        /*    box-shadow: 0 0 0 2px red, 0 0 0 4px blue; !* Create a purple border with red and blue shadows *!*/
-        /*}*/
+    .green-border{
+        border: 2px solid green;
+    }
 
-        .red-blue{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-        }
+    /*.both-borders{*/
+    /*    border: none; !* Remove default border *!*/
+    /*    box-shadow: 0 0 0 2px red, 0 0 0 4px blue; !* Create a purple border with red and blue shadows *!*/
+    /*}*/
 
-        .red-green{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
-        }
+    .red-blue{
+        border: none; /* Remove default border */
+        box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    }
 
-        .green-blue{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-        }
+    .red-green{
+        border: none; /* Remove default border */
+        box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
+    }
 
-        .blue-red{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-        }
+    .green-blue{
+        border: none; /* Remove default border */
+        box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    }
 
-        .green-red{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
-        }
+    .blue-red{
+        border: none; /* Remove default border */
+        box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    }
 
-        .blue-green{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-        }
+    .green-red{
+        border: none; /* Remove default border */
+        box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
+    }
 
-        .all-borders{
-            border: none; /* Remove default border */
-            box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green; /* Create a purple border with red and blue shadows */
-        }
+    .blue-green{
+        border: none; /* Remove default border */
+        box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    }
 
-        .layers{
-            display:flex;
-            flex-direction: row;
-            justify-content: center;
-            align-content: center;
-        }
+    .all-borders{
+        border: none; /* Remove default border */
+        box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green; /* Create a purple border with red and blue shadows */
+    }
+
+    .layers{
+        display:flex;
+        flex-direction: row;
+        justify-content: center;
+        align-content: center;
+    }
 
 
 
-    </style>
+</style>
 
-    {{ formfields }}
-    {{ next_button }}
+
+{{ formfields }}
+{{ next_button }}
 
 {{ endblock }}
