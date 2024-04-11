@@ -1,35 +1,50 @@
 {{ block title }}
-    Experiment
+    Page title
 {{ endblock }}
 {{ block content }}
 
 <div class="header-container">
-    <div class="player-values">
-        P1: <span id="p1-value">0</span>
-        P2: <span id="p2-value">0</span>
-        P3: <span id="p3-value">3</span>
+    <div class="values-container">
+        <div id="player-values">
+            P1: <span id="p1-value">__</span>
+            P2: <span id="p2-value">__</span>
+            P3: <span id="p3-value">__</span>
+        </div>
+
+        <div id="hover-values">
+            Hovering: P1: <span id="hover-p1-value">__</span> P2: <span id="hover-p2-value">__</span> P3: <span id="hover-p3-value">__</span>
+        </div>
     </div>
-    <div id="timer">
-        Time left: 01:00
+
+    <div class="timers-container">
+        <div id="timer">
+            Time left:
+        </div>
+
+        <div id="agreement-timer">
+            Agree:
+        </div>
     </div>
 </div>
 
+
+
 <div class="parent-container">
-    <div id="triangleContainer">
-    </div>
+    <div id="triangleContainer"></div>
 </div>
 
 
 <script>
 
+    window.redFillTimeouts = {};
+
     document.addEventListener('DOMContentLoaded', function() {
-        var totalNodes = 10; // define total num of circles
-        var totalPoints = 12; // define total num of points to distribute
+        var totalNodes = 28; // define total num of circles
+        var totalPoints = 15; // define total num of points to distribute
         generateTriangle(totalNodes, totalPoints);
-        startTimer(10);     // timeout timer
+        startTimer(100);
     });
 
-    // move to next page when time out
     function startTimer(duration) {
         var display = document.getElementById('timer');
         var timer = duration, minutes, seconds;
@@ -52,99 +67,114 @@
         }, 1000);
     }
 
+    window.agreementInterval = null;
+
+    function startAgreementTimer(buttonId) {
+        if (window.agreementInterval) {
+            clearInterval(window.agreementInterval);
+        }
+
+        var agreementTimeLeft = 10; // agreement time
+        var display = document.getElementById('agreement-timer');
+        display.textContent = 'Agree: '; // Initialize with 5 seconds
+
+        window.agreementInterval = setInterval(function () {
+            agreementTimeLeft--;
+            display.textContent = 'Agree: ' + agreementTimeLeft;
+            if (agreementTimeLeft <= 0) {
+                clearInterval(window.agreementInterval);
+                document.querySelector('form').submit(); // Submit the form to move to the next screen
+            } else {
+                // Check if the button still has an agreement
+                if (!document.getElementById(buttonId).classList.contains('red-fill')) {
+                    clearInterval(window.agreementInterval);
+                    display.textContent = 'Agree: '; // Reset the agreement timer display
+                }
+            }
+        }, 1000);
+    }
 
     function generateTriangle(n, points) {
         const container = document.getElementById('triangleContainer');
+        const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
+        window.buttonStates = {};  // Ensure this is empty before populating
 
-        //calculated the max number of rows here based on n circles in a triangle
-        const numRows = Math.sqrt(2 * n + 0.25) - 0.5;
+        var bottomP = 0;
 
-        //initialized global point counters for each side of the triangle - unimportant
-        var bottomPGlobal =0
-        var leftPGlobal = (points-3)/3;
-        var rightPGlobal = 0;
-
-        // defined mappings for each player's perspective
-        // i.e. for player 2, they'll see what player 1 sees as a right point (rightP) as the bottom point (bottomP)
         const mappings = {
-            1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}), // Player 1 sees as is
-            2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}), // Player 2 mapping
-            3: (bottomP, leftP, rightP) =>  ({bottomP: leftP, leftP: rightP, rightP: bottomP})// Player 3 mapping
+            1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}),
+            2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}),
+            3: (bottomP, leftP, rightP) => ({bottomP: leftP, leftP: rightP, rightP: bottomP})
         };
 
-        //retrieved point mapping for current player
-        const mapPoints = mappings[window.playerId];
-
-        //loop to create each row of the triangle (starting from top of triangle (row with most circles) --> down)
-        for (var rowNum = numRows; rowNum >=1; rowNum--) {
-            const rowDiv = document.createElement('div'); //created new div for row
+        for (var rowNum = numRows; rowNum >= 1; rowNum--) {
+            const rowDiv = document.createElement('div');
             rowDiv.className = 'triangle-row';
+            var leftP = rowNum - 1;
+            var rightP = 0;
+            const scalingFactor = points / (numRows - 1);
 
-            //initialize point counters for the current row
-            var bottomP = bottomPGlobal;
-            var leftP = leftPGlobal;
-            var rightP = rightPGlobal;
-
-            // loop to create each cirlce in a row
             for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
-
-                //mapping the points being displayed on the button based on which player it is
-                const {bottomP: displayBottomP, leftP: displayLeftP, rightP: displayRightP} = mapPoints(bottomP, leftP, rightP);
-
+                const {bottomP: rawBottomP, leftP: rawLeftP, rightP: rawRightP} = mappings[window.playerId](bottomP, leftP, rightP);
+                const scaledBottomP = formatCoordinate(rawBottomP * scalingFactor);
+                const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
+                const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
+                const buttonId = `btn${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
                 const button = document.createElement('button');
-
-                //initialize properties of the circle
-                button.innerText = `(${displayBottomP},${displayLeftP},${displayRightP})`;
-                button.style.fontSize = '8px';
-
-                button.id = `btn${displayBottomP}_${displayLeftP}_${displayRightP}`;
+                button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`; // Store coordinates in data attribute
+                button.id = buttonId;
                 button.className = 'button';
-                button.type='button';
-                button.addEventListener('click', function() {
-                        test(button.id);
+                button.type = 'button';
+                button.addEventListener('click', function(e) {
+                    test(e.target.id);  // Use e.target.id to ensure correct ID is used
                 });
-                console.log(`Event listener attached to ${button.id}`); // debugging
                 rowDiv.appendChild(button);
 
-                //if it's not the last circle (very bottom vertex)
-                //adjust the points to initialize the next button with in the current row
-                if (rowNum !== 1) {
-                        leftP--;
-                        rightP++;
-                    }
+                button.addEventListener('mouseenter', function(e) {
+                    var hoverValues = e.target.dataset.coords.split(',').map(function(coord) {
+                        return coord.trim().replace(/[()]/g, ''); // Remove parentheses and trim spaces
+                    });
+                    document.getElementById('hover-p1-value').textContent = hoverValues[0];
+                    document.getElementById('hover-p2-value').textContent = hoverValues[1];
+                    document.getElementById('hover-p3-value').textContent = hoverValues[2];
+                });
+
+                button.addEventListener('mouseleave', function() {
+                    document.getElementById('hover-p1-value').textContent = '__';
+                    document.getElementById('hover-p2-value').textContent = '__';
+                    document.getElementById('hover-p3-value').textContent = '__';
+                });
+
+                // Initialize state for this button
+                window.buttonStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
+
+                leftP--;
+                rightP++;
             }
 
-            //add the current row to the triangle
+
             container.appendChild(rowDiv);
-
-            //updating the global point counters for the next row
-            bottomPGlobal++;
-            leftPGlobal--;
-
+            bottomP++;
+            leftP = rowNum - 2;
+            rightP = 0;
         }
     }
 
+    function formatCoordinate(value) {
+        if (Math.floor(value) !== value) {
+            return value.toFixed(1); // Rounds to one decimal point if not an integer
+        }
+        return value; // Returns the value as is if it's an integer
+    }
 
     function test(buttonId) {
         liveSend({button_clicked: true, button_id:buttonId});
     }
-    var borderColors = {
-    red: false,
-    blue: false,
-    green: false
-    };
 
-    var buttonStates = {
-        btn0_3_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn0_2_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn0_1_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn0_0_3: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn1_2_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn1_1_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn1_0_2: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn2_1_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn2_0_1: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false},
-        btn3_0_0: { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false}
+    var borderColors = {
+        red: false,
+        blue: false,
+        green: false
     };
 
     function setPlayerValues(buttonId) {
@@ -161,33 +191,32 @@
 
         if (data.player_id === 1) {
             btnState.clickedByUser1 = !btnState.clickedByUser1;
-        } else if (data.player_id == 2) {
+        } else if (data.player_id === 2) {
             btnState.clickedByUser2 = !btnState.clickedByUser2;
-        } else if (data.player_id == 3) {
+        } else if (data.player_id === 3) {
             btnState.clickedByUser3 = !btnState.clickedByUser3;
         }
 
-        // Reset states for player who moved to different button
         Object.keys(buttonStates).forEach(function(otherButtonId) {
             if (otherButtonId !== data.button_id) {
                 var otherBtnState = buttonStates[otherButtonId];
                 if (data.player_id === 1) {
                     otherBtnState.clickedByUser1 = false;
-                } else if (data.player_id == 2) {
+                } else if (data.player_id === 2) {
                     otherBtnState.clickedByUser2 = false;
-                } else if (data.player_id == 3) {
+                } else if (data.player_id === 3) {
                     otherBtnState.clickedByUser3 = false;
                 }
                 updateButtonAppearance(document.getElementById(otherButtonId), otherBtnState);
             }
         });
 
-        // update the appearance of currently clicked button
         updateButtonAppearance(button, btnState);
         if (data.player_id === window.playerId) {
             setPlayerValues(data.button_id);
         }
     }
+
 
     function updateButtonAppearance(button, btnState) {
         button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
@@ -197,6 +226,23 @@
             2: {1: 'blue', 2: 'green', 3: 'red'},
             3: {1: 'red', 2: 'blue', 3: 'green'}
         };
+
+        var activePlayers = [];
+        if (btnState.clickedByUser1) activePlayers.push(1);
+        if (btnState.clickedByUser2) activePlayers.push(2);
+        if (btnState.clickedByUser3) activePlayers.push(3);
+
+        // Update the button's appearance based on the number of players who have clicked it
+        if (activePlayers.length >= 2) {
+            button.classList.add('red-fill');
+            startAgreementTimer(button.id); // Only call this function to handle agreement
+        } else {
+            button.classList.remove('red-fill');
+            if (window.agreementInterval) {
+                clearInterval(window.agreementInterval);
+                document.getElementById('agreement-timer').textContent = 'Agree: ';
+            }
+        }
 
         function getColorBorderClass(playerNum) {
             return playerColor[window.playerId][playerNum] + '-border';
@@ -225,33 +271,53 @@
     // get and store the player's ID
     window.playerId = {{ player.id_in_group }};
 
-
 </script>
-
 
 <style>
     .header-container {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column; /* Stack the child divs vertically */
         align-items: center;
     }
 
-    .player-values, #timer {
+    .values-container, .timers-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%; /* Take the full width of the header container */
+        margin-bottom: 10px; /* Add some space between the rows */
+    }
+
+    .player-values, .hover-values, #timer, #agreement-timer {
+        flex-basis: 50%; /* Divide the space equally between the two elements */
+        text-align: center; /* Center the text within each element */
         margin: 0;
         padding: 0;
         font-size: 20px;
     }
+
 
     .triangle-row {
         display: flex;
         justify-content: center;
         align-items: center;
     }
-    .button{
-        width:30px;
-        height:30px;
-        border-radius:50%;
+    .button {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        font-size: 0px; /* Keep text hidden by default */
+        line-height: 30px; /* Center text vertically */
+        color: black;
+        border: 1px solid #ccc;
+        background-color: white;
+        position: relative; /* Set position context for the pseudo-element */
+        overflow: hidden; /* Prevents content from spilling out */
     }
+
+        .button:hover {
+        background-color: rgba(0, 0, 0, 0.5); /* Shading effect */
+    }
+
 
     .red-border{
         border: 2px solid red;
@@ -305,19 +371,21 @@
         box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green; /* Create a purple border with red and blue shadows */
     }
 
+    .red-fill {
+        background-color: red; /* Fills the button with red color */
+    }
+
     .layers{
         display:flex;
         flex-direction: row;
         justify-content: center;
         align-content: center;
     }
-
-
-
 </style>
 
 
 {{ formfields }}
 {{ next_button }}
+
 
 {{ endblock }}
