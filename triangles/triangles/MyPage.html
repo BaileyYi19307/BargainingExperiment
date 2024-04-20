@@ -12,7 +12,7 @@
         </div>
 
         <div id="hover-values">
-            Hovering: P1: <span id="hover-p1-value">__</span> P2: <span id="hover-p2-value">__</span> P3: <span id="hover-p3-value">__</span>
+            <span id="hover-p1-value"></span> <span id="hover-p2-value"></span><span id="hover-p3-value"></span>
         </div>
     </div>
 
@@ -42,7 +42,7 @@
         var totalNodes = 28; // define total num of circles
         var totalPoints = 15; // define total num of points to distribute
         generateTriangle(totalNodes, totalPoints);
-        startTimer(100);
+        {#startTimer(100);#}
     });
 
     function startTimer(duration) {
@@ -137,6 +137,10 @@
                     document.getElementById('hover-p1-value').textContent = hoverValues[0];
                     document.getElementById('hover-p2-value').textContent = hoverValues[1];
                     document.getElementById('hover-p3-value').textContent = hoverValues[2];
+
+                     showAndPositionHoverValue('hover-p1-value', hoverValues[0], 'topLeft');
+    showAndPositionHoverValue('hover-p2-value', hoverValues[1], 'topRight');
+    showAndPositionHoverValue('hover-p3-value', hoverValues[2], 'bottom');
                 });
 
                 button.addEventListener('mouseleave', function() {
@@ -159,6 +163,28 @@
             rightP = 0;
         }
     }
+function showAndPositionHoverValue(id, value, position) {
+    var valueSpan = document.getElementById(id);
+    valueSpan.textContent = value;
+    valueSpan.style.display = 'block';
+
+    var containerRect = document.getElementById('triangleContainer').getBoundingClientRect();
+
+
+    var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (position === 'topLeft') {
+        valueSpan.style.left = (containerRect.left + scrollLeft-25) + 'px';
+        valueSpan.style.top = (containerRect.top + scrollTop-25) + 'px';
+    } else if (position === 'topRight') {
+        valueSpan.style.left = (containerRect.right + scrollLeft +25 - valueSpan.offsetWidth) + 'px';
+        valueSpan.style.top = (containerRect.top + scrollTop-25) + 'px';
+    } else if (position === 'bottom') {
+        valueSpan.style.left = (containerRect.left + scrollLeft + (containerRect.width - valueSpan.offsetWidth) / 2) + 'px';
+        valueSpan.style.top = (containerRect.bottom + scrollTop +25 - valueSpan.offsetHeight) + 'px';
+    }
+}
 
     function formatCoordinate(value) {
         if (Math.floor(value) !== value) {
@@ -274,6 +300,10 @@
 </script>
 
 <style>
+
+    #triangleContainer{
+        display: inline-block;
+    }
     .header-container {
         display: flex;
         flex-direction: column; /* Stack the child divs vertically */
@@ -287,7 +317,12 @@
         margin-bottom: 10px; /* Add some space between the rows */
     }
 
-    .player-values, .hover-values, #timer, #agreement-timer {
+    #hover-p1-value, #hover-p2-value, #hover-p3-value {
+    position: absolute;
+    display: none; /* Hide initially */
+}
+
+    .player-values, #timer, #agreement-timer {
         flex-basis: 50%; /* Divide the space equally between the two elements */
         text-align: center; /* Center the text within each element */
         margin: 0;
@@ -381,6 +416,15 @@
         justify-content: center;
         align-content: center;
     }
+
+    .parent-container{
+        border: 1px solid black;
+        display: flex;
+        align-content: center;
+        justify-content: center;
+    }
+
+
 </style>
 
 
