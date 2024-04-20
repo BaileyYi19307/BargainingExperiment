@@ -36,13 +36,19 @@
 
 <script>
 
+    // adjusting values
+    var config = {
+        totalRows: 6,
+        totalPoints: 15,
+        timeToAgreement: 150,
+        ratificationTime: 10
+    }
+
     window.redFillTimeouts = {};
 
     document.addEventListener('DOMContentLoaded', function() {
-        var totalNodes = 28; // define total num of circles
-        var totalPoints = 15; // define total num of points to distribute
-        generateTriangle(totalNodes, totalPoints);
-        {#startTimer(100);#}
+        generateTriangle(config.totalPoints);
+        startTimer(config.timeToAgreement);
     });
 
     function startTimer(duration) {
@@ -74,14 +80,14 @@
             clearInterval(window.agreementInterval);
         }
 
-        var agreementTimeLeft = 10; // agreement time
+        var ratificationTime = config.ratificationTime; // agreement time
         var display = document.getElementById('agreement-timer');
         display.textContent = 'Agree: '; // Initialize with 5 seconds
 
         window.agreementInterval = setInterval(function () {
-            agreementTimeLeft--;
-            display.textContent = 'Agree: ' + agreementTimeLeft;
-            if (agreementTimeLeft <= 0) {
+            ratificationTime--;
+            display.textContent = 'Agree: ' + ratificationTime;
+            if (ratificationTime <= 0) {
                 clearInterval(window.agreementInterval);
                 document.querySelector('form').submit(); // Submit the form to move to the next screen
             } else {
@@ -94,9 +100,9 @@
         }, 1000);
     }
 
-    function generateTriangle(n, points) {
+    function generateTriangle(points) {
         const container = document.getElementById('triangleContainer');
-        const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
+        const numRows = config.totalRows;
         window.buttonStates = {};  // Ensure this is empty before populating
 
         var bottomP = 0;
@@ -424,12 +430,23 @@ function showAndPositionHoverValue(id, value, position) {
         justify-content: center;
     }
 
+    #next-button-container {
+        position: absolute;
+        display: none;
+    }
+
+
+
 
 </style>
 
 
 {{ formfields }}
-{{ next_button }}
+
+<div id="next-button-container">
+    {{ next_button }}
+</div>
+
 
 
 {{ endblock }}
