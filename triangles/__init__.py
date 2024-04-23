@@ -6,7 +6,7 @@ Your app description
 """
 
 totalRounds = 5
-random_grouping = True
+random_grouping = models.BooleanField(initial = True)
 
 class C(BaseConstants):
     NAME_IN_URL = 'triangles'
