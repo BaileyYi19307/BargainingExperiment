@@ -4,8 +4,11 @@
 
 {{ block content }}
     <div style="text-align: center; padding: 20px;">
-        <h1>Results</h1>
-        <p>This is a results screen for the current round. Please click next to proceed when ready.</p>
+        <p>
+         You get {{ player.payoff }}
+        </p>
+        <p>Original Euros Earned: {{ player.ogCurrency}}</p>
+        <p>Final Euros Earned (after decay): {{ player.currency }}</p>
         <button id="next-button" class="next-button">Next</button>
     </div>
 
