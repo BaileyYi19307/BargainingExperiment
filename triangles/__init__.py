@@ -32,6 +32,7 @@ class Group(BaseGroup):
     button_clicked=models.BooleanField(initial=False)
     previousClicker=models.IntegerField(initial=0)
     howManyInAgreement=models.IntegerField(initial=0)
+    agreementTimerStarted=models.BooleanField(initial=False)
 
 
 
@@ -59,14 +60,38 @@ class Report(ExtraModel):
 
 
 class MyPage(Page):
-        # Handle the normal case
     @staticmethod
     def live_method(player, data):
-        g= player.group
+        g = player.group
+        print(f"Initial data received: {data}") 
+
+        print(f"Initial state: TimerStarted={g.agreementTimerStarted}, HowManyInAgreement={g.howManyInAgreement}")
+
         if 'participants' in data:
-            g.previousClicker=data['participants']
-        if 'numInAgreement' in data:
-            g.howManyInAgreement=data['numInAgreement']
+            g.previousClicker = data['participants']
+
+        if 'payoffs' in data and '6' in data['payoffs']:
+            timer_status = data['payoffs']['6']
+            g.agreementTimerStarted = (timer_status == "Started")
+            print(f"Agreement timer status received: {timer_status}")
+            print(f"Agreement timer changed to: {g.agreementTimerStarted}")
+
+        if g.agreementTimerStarted:
+            if 'numInAgreement' in data: # arrived
+                current_agreements = int(data['numInAgreement'])
+                print(f"Received numInAgreement: {current_agreements}")
+                if current_agreements >= 2:
+                    g.howManyInAgreement = current_agreements
+                    # do nothing if less than 2 while the timer is active
+                    print(f"Updated within timer active: {g.howManyInAgreement}")
+        else:
+            if 'numInAgreement' in data: # arrived
+                current_agreements = int(data['numInAgreement'])
+                g.howManyInAgreement = current_agreements  # always update if timer not active
+                print(f"Updated with timer inactive: {g.howManyInAgreement}")
+                
+        print(f"Final state: TimerStarted={g.agreementTimerStarted}, HowManyInAgreement={g.howManyInAgreement}")
+
         if 'payoffs' in data:
             if data['payoffs']['5'] is g.previousClicker:
                 print(f"The previous clicker was participant{g.previousClicker}")
@@ -75,11 +100,13 @@ class MyPage(Page):
                 p1_score=data['payoffs']['1']
                 p2_score=data['payoffs']['2']
                 p3_score=data['payoffs']['3']
-                time_stamp=3*60-(3-data['payoffs']['4'])
+                #change 150 to the maximum amount of time the session has
+                currency_decay=100*((3-data['payoffs']['4'])/2) #decreases at a rate of 0.02 per second
+                time_stamp=150-currency_decay
                 print(f"The round is {round_num}")
                 print(f"The data is as follows:{data}")
                 print(f"There are {g.howManyInAgreement} players in agreement")
-                Report.create(subjectId="test",round=1,subidgroup=data['payoffs']['5'], s1=p1_score, s2=p2_score, s3=p3_score, numAgreement=g.howManyInAgreement, timestamp=time_stamp)
+                Report.create(subjectId=player.participant.id_in_session,round=g.round_number,subidgroup=data['payoffs']['5'], s1=p1_score, s2=p2_score, s3=p3_score, numAgreement=g.howManyInAgreement, timestamp=time_stamp)
             currencyDecay = data['payoffs']['4']
 
             # Ensure default values if None is found
