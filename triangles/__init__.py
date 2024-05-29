@@ -1,6 +1,5 @@
 from otree.api import *
 
-
 doc = """
 Your app description
 """
@@ -8,10 +7,11 @@ Your app description
 totalRounds = 5
 random_grouping = models.BooleanField(initial = True)
 
+
 class C(BaseConstants):
     NAME_IN_URL = 'triangles'
     PLAYERS_PER_GROUP = None
-    NUM_ROUNDS = 1
+    NUM_ROUNDS = totalRounds
 
 
 class Subsession(BaseSubsession):
@@ -30,12 +30,14 @@ class Subsession(BaseSubsession):
 
 class Group(BaseGroup):
     button_clicked=models.BooleanField(initial=False)
+    previousClicker=models.IntegerField(initial=0)
+    howManyInAgreement=models.IntegerField(initial=0)
+
+
 
 class Player(BasePlayer):
-    ogCurrency=models.FloatField(initial=0)
-    currency=models.FloatField(initial=0)
-
-    pass
+    ogCurrency = models.FloatField(initial=0)
+    currency = models.FloatField(initial=0)
 
 # PAGES
 class WaitingRoom(WaitPage):
@@ -43,48 +45,74 @@ class WaitingRoom(WaitPage):
     title_text = "Waiting Room"
     body_text = "Wait for everyone to join before proceeding"
 
-# PAGES
-class MyPage(Page):
+class Report(ExtraModel):
+    subjectId = models.StringField(initial="")
+    group = models.Link(Group)
+    round = models.IntegerField(initial=0)
+    subidgroup = models.IntegerField(initial=0)
+    s1 = models.IntegerField(initial=0)
+    s2 = models.IntegerField(initial=0)
+    s3 = models.IntegerField(initial=0)
+    numAgreement = models.IntegerField(initial=0)
+    timestamp = models.FloatField(initial=0)
 
+
+
+class MyPage(Page):
+        # Handle the normal case
     @staticmethod
     def live_method(player, data):
-        if 'button_clicked' in data:
-            return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
+        g= player.group
+        if 'participants' in data:
+            g.previousClicker=data['participants']
+        if 'numInAgreement' in data:
+            g.howManyInAgreement=data['numInAgreement']
         if 'payoffs' in data:
-            g = player.group
+            if data['payoffs']['5'] is g.previousClicker:
+                print(f"The previous clicker was participant{g.previousClicker}")
+                g.previousClicker=data['payoffs']['5']
+                round_num=player.round_number
+                p1_score=data['payoffs']['1']
+                p2_score=data['payoffs']['2']
+                p3_score=data['payoffs']['3']
+                time_stamp=3*60-(3-data['payoffs']['4'])
+                print(f"The round is {round_num}")
+                print(f"The data is as follows:{data}")
+                print(f"There are {g.howManyInAgreement} players in agreement")
+                Report.create(subjectId="test",round=1,subidgroup=data['payoffs']['5'], s1=p1_score, s2=p2_score, s3=p3_score, numAgreement=g.howManyInAgreement, timestamp=time_stamp)
             currencyDecay = data['payoffs']['4']
 
             # Ensure default values if None is found
             default_payoff = 0
 
-            # Handling for Player 1
             p1 = g.get_player_by_id(1)
             p1_payoff = data['payoffs']['1']
-            print(p1_payoff)
             if p1_payoff is None:
                 p1.payoff = default_payoff
             p1.payoff=p1_payoff
             p1.currency = round(float(p1.payoff) * currencyDecay,2)
-            p1.ogCurrency = float(p1.payoff) * 3.00  # Adjust the 3 as necessary
+            p1.ogCurrency = float(p1.payoff) * 3.00 
 
-            # Handling for Player 2
             p2 = g.get_player_by_id(2)
             p2_payoff = data['payoffs'].get('2')
             if p2_payoff is None:
                 p2.payoff = default_payoff
             p2.payoff = p2_payoff
             p2.currency = round(float(p2.payoff) * currencyDecay,2)
-            p2.ogCurrency = float(p2.payoff) * 3.00  # Adjust the 3 as necessary
+            p2.ogCurrency = float(p2.payoff) * 3.00 
 
-            # Handling for Player 3
+
             p3 = g.get_player_by_id(3)
             p3_payoff = data['payoffs'].get('3')
             if p3_payoff is None:
                 p3.payoff = default_payoff
             p3.payoff=p3_payoff
             p3.currency = round(float(p3.payoff) * currencyDecay,2)
-            p3.ogCurrency = float(p3.payoff) * 3.00  # Adjust the 3 as necessary
+            p3.ogCurrency = float(p3.payoff) * 3.00
 
+
+        if 'button_clicked' in data:
+            return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
 class ResultsPage(Page):
     @staticmethod
@@ -99,3 +127,22 @@ class FinalPage(Page):
 
 
 page_sequence = [WaitingRoom, MyPage, ResultsPage] * totalRounds + [FinalPage]
+
+
+def custom_export(players):
+    yield ['subjectId', 'group', 'round', 'subidgroup', 's1', 's2', 's3', 'numAgreement', 'timestamp']
+    reports = Report.filter()
+    for report_no in range(len(reports)-1):
+        yield [
+            reports[report_no].subjectId,
+            reports[report_no].group,
+            reports[report_no].round,
+            reports[report_no].subidgroup,
+            reports[report_no].s1,
+            reports[report_no].s2,
+            reports[report_no].s3,
+            reports[report_no].numAgreement,
+            reports[report_no].timestamp,
+        ]
+    for report in reports:
+        report.delete()
