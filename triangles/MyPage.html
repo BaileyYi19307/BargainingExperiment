@@ -163,7 +163,6 @@
         return value; // Returns the value as is if it's an integer
     }
 
-    ////////////////////////////////////////////////////////// Button Click ////////////////////////
     function handleButtonClick(buttonId) {
         liveSend({
             button_clicked: true, button_id:buttonId,participants:{{player.id_in_group}}
@@ -211,18 +210,18 @@
 
     }
 
-    let agreementButtonID = null;  // Track the ID of the button currently in agreement
-    let prevButtonStates = {};  // Stores previous states for all buttons
+    let agreementButtonID = null;  // ID of the button currently in agreement
+    let prevButtonStates = {};  // stores previous states for all buttons
 
     function update(buttonID) {
-        // Calculate the current sum for the button being updated
+        // calculate the current sum for the button being updated
         const currentSum = Object.values(window.buttonStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
 
-        // If there is a button under agreement, check its state
+        // if there's a button under agreement, check its state
         if (agreementButtonID !== null) {
             const agreementCurrentSum = Object.values(window.buttonStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
 
-            // Check if the number of active clicks on the agreement button drops below two
+            // check if num of active clicks on the agreement button drops below two
             if (agreementCurrentSum < 2) {
                 stopAgreementTimer();
                 console.log(`Agreement broken on button ${agreementButtonID}`);
@@ -241,7 +240,7 @@
             console.log(`Agreement started on button ${buttonID}`);
         }
 
-        // Store the current state for the next update
+        // store the current state for the next update
         prevButtonStates[buttonID] = { ...window.buttonStates[buttonID] };
     }
 
