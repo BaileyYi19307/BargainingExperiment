@@ -4,14 +4,14 @@ doc = """
 Your app description
 """
 
-totalRounds = 5
+totalRounds = 5         # number of rounds being played
 random_grouping = models.BooleanField(initial = True)
 
 
 class C(BaseConstants):
     NAME_IN_URL = 'triangles'
     PLAYERS_PER_GROUP = None
-    NUM_ROUNDS = totalRounds
+    NUM_ROUNDS = 1          # number of cycles of the entire game
 
 
 class Subsession(BaseSubsession):
@@ -155,6 +155,9 @@ class FinalPage(Page):
 
 page_sequence = [WaitingRoom, MyPage, ResultsPage] * totalRounds + [FinalPage]
 
+print(f"Total pages: {len(page_sequence)}")
+for i, page in enumerate(page_sequence):
+    print(f"Page {i + 1}: {page.__name__}")
 
 def custom_export(players):
     yield ['subjectId', 'group', 'round', 'subidgroup', 's1', 's2', 's3', 'numAgreement', 'timestamp']
