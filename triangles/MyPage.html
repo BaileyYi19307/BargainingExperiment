@@ -41,6 +41,8 @@
 
 
 <script>
+    let count=0;
+
     var config = {
         totalRows: 6,
         totalPoints: 15,
@@ -139,7 +141,7 @@
 
                 function hideHoverValue(id) {
                     var valueSpan = document.getElementById(id);
-                    valueSpan.style.display = 'none';  
+                    valueSpan.style.display = 'none';
                 }
                 window.buttonStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
 
@@ -163,7 +165,9 @@
 
     ////////////////////////////////////////////////////////// Button Click ////////////////////////
     function handleButtonClick(buttonId) {
-        liveSend({button_clicked: true, button_id:buttonId,participants:{{player.id_in_group}}});
+        liveSend({
+            button_clicked: true, button_id:buttonId,participants:{{player.id_in_group}}
+        });
     }
 
 
@@ -203,6 +207,8 @@
         if (data.player_id === window.playerId) {
             setPlayerValues(data.button_id);
         }
+        updatePayoffs();
+
     }
 
     let agreementButtonID = null;  // Track the ID of the button currently in agreement
@@ -224,6 +230,9 @@
 
             }
         }
+
+
+        liveSend({numInAgreement: currentSum});
 
         // if the current button reaches an agreement condition and no other agreement is active
         if (currentSum >= 2 && agreementButtonID === null) {
@@ -307,17 +316,21 @@ function startAgreementTimer() {
 function updatePayoffs() {
     // Get payoff values from the input fields
     const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
+    console.log(payoff1);
     const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
     const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
 
     const currencyDecay= parseFloat(document.getElementById('euValue').textContent);
+
+    console.log("Hi");
     // Send the new payoffs to the server
     liveSend({
         payoffs: {
             1: payoff1,
             2: payoff2,
             3: payoff3,
-            4: currencyDecay
+            4: currencyDecay,
+            5: window.playerId
         }
     });
 }
