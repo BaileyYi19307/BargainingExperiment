@@ -216,6 +216,8 @@
     function update(buttonID) {
         // calculate the current sum for the button being updated
         const currentSum = Object.values(window.buttonStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
+        const activeParticipants = Object.entries(window.buttonStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
+
 
         // if there's a button under agreement, check its state
         if (agreementButtonID !== null) {
@@ -230,8 +232,7 @@
             }
         }
 
-
-        liveSend({numInAgreement: currentSum});
+        liveSend({ numInAgreement: currentSum, activeParticipants: activeParticipants });
 
         // if the current button reaches an agreement condition and no other agreement is active
         if (currentSum >= 2 && agreementButtonID === null) {
@@ -252,7 +253,7 @@ function startAgreementTimer() {
         seconds--;
         agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
         if (seconds === 0) {
-            updatePayoffs(); // Function to handle payoffs (make sure it's defined)
+            // updatePayoffsInAgreement()            
             document.querySelector('form').submit(); // Submit the form to move to the next screen
         }
     }, 1000);
@@ -260,6 +261,7 @@ function startAgreementTimer() {
 
 
     function stopAgreementTimer() {
+        // livesend({payoffs:{6:false}});
         clearInterval(window.agreementTimer);
         window.agreementTimer = null;
         document.getElementById('agreement-timer').textContent = 'Time to Agreement:';
@@ -320,6 +322,7 @@ function updatePayoffs() {
     const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
 
     const currencyDecay= parseFloat(document.getElementById('euValue').textContent);
+    var time = new Date();
 
     console.log("Hi");
     // Send the new payoffs to the server
@@ -329,10 +332,14 @@ function updatePayoffs() {
             2: payoff2,
             3: payoff3,
             4: currencyDecay,
-            5: window.playerId
+            5: window.playerId,
+            7: time.toISOString()
         }
     });
 }
+
+
+
 
     function setPlayerValues(buttonId) {
         var values = buttonId.replace('btn', '').split('_').map(Number);
