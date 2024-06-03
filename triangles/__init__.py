@@ -88,7 +88,7 @@ class MyPage(Page):
                     else:
                         pass
                 else: # only one participant is clicking on the button being updated
-                    WhoAgrees.clear() 
+                    WhoAgrees.clear()
                     list(map(lambda x: WhoAgrees.append(x), active_participants))
             else:
                 WhoAgrees.clear()
@@ -115,7 +115,23 @@ class MyPage(Page):
                 P1_agree = 1 if "clickedByUser1" in session.vars['who_in_agreement'] else 0
                 P2_agree = 1 if "clickedByUser2" in session.vars['who_in_agreement'] else 0
                 P3_agree = 1 if "clickedByUser3" in session.vars['who_in_agreement'] else 0
-                Report.create(Session_Code=g.session.code,Subject_ID=player.participant.code,Group_Num=g.id,Round_Num=player.custom_round_num,SubGroup_ID=data['payoffs']['5'], S1_Points=p1_score, S2_Points=p2_score, S3_Points=p3_score, P1_Agree=P1_agree, P2_Agree=P2_agree,P3_Agree=P3_agree,NumInAgreement=len(session.vars['who_in_agreement']), Timestamp=time_stamp,Time_Since_Round_Start=since_beginning)
+
+                if P1_agree or P2_agree or P3_agree:
+                  Report.create(
+                      Session_Code=g.session.code,
+                      Subject_ID=player.participant.code,
+                      Group_Num=g.id,Round_Num=player.custom_round_num,
+                      SubGroup_ID=data['payoffs']['5'],
+                      S1_Points=p1_score,
+                      S2_Points=p2_score,
+                      S3_Points=p3_score,
+                      P1_Agree=P1_agree,
+                      P2_Agree=P2_agree,
+                      P3_Agree=P3_agree,
+                      NumInAgreement=len(session.vars['who_in_agreement']),
+                      Timestamp=time_stamp,
+                      Time_Since_Round_Start=since_beginning
+                    )
             currencyDecay = data['payoffs']['4']
 
             # Ensure default values if None is found
@@ -127,7 +143,7 @@ class MyPage(Page):
                 p1.payoff = default_payoff
             p1.payoff=p1_payoff
             p1.currency = round(float(p1.payoff) * currencyDecay,2)
-            p1.ogCurrency = float(p1.payoff) * 3.00 
+            p1.ogCurrency = float(p1.payoff) * 3.00
 
             p2 = g.get_player_by_id(2)
             p2_payoff = data['payoffs'].get('2')
@@ -135,7 +151,7 @@ class MyPage(Page):
                 p2.payoff = default_payoff
             p2.payoff = p2_payoff
             p2.currency = round(float(p2.payoff) * currencyDecay,2)
-            p2.ogCurrency = float(p2.payoff) * 3.00 
+            p2.ogCurrency = float(p2.payoff) * 3.00
 
 
             p3 = g.get_player_by_id(3)
@@ -149,7 +165,7 @@ class MyPage(Page):
 
         if 'button_clicked' in data:
             return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
-    
+
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
         player.custom_round_num += 1
@@ -197,8 +213,6 @@ def custom_export(players):
         ]
     for report in reports:
         report.delete()
-
-
 
 
 
