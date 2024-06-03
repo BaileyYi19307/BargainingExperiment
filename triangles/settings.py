@@ -21,7 +21,7 @@ SESSION_CONFIG_DEFAULTS = dict(
 )
 
 PARTICIPANT_FIELDS = []
-SESSION_FIELDS = ['who_in_agreement','numAgree']
+SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime']
 
 # ISO-639 code
 # for example: de, fr, ja, ko, zh-hans
