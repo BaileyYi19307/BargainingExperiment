@@ -68,6 +68,7 @@
   function startDecay() {
             var currentValue = 3.00;
             var display = document.getElementById('euValue');
+            liveSend({'timerStarted':Date.now()}); //start of the timer reference point
 
             var decayInterval = setInterval(function() {
                 if (currentValue <= 0) {
@@ -333,7 +334,8 @@ function updatePayoffs() {
             3: payoff3,
             4: currencyDecay,
             5: window.playerId,
-            7: time.toISOString()
+            7: time.toISOString(),
+            8: Date.now()
         }
     });
 }
