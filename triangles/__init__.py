@@ -56,7 +56,7 @@ class Report(ExtraModel):
     P3_Agree=models.IntegerField(initial=0)
     NumInAgreement = models.IntegerField()
     Timestamp = models.StringField()
-
+    Time_Since_Round_Start= models.FloatField()
 
 
 class MyPage(Page):
@@ -65,13 +65,15 @@ class MyPage(Page):
         session=player.session
         g = player.group
 
+        if 'timerStarted' in data:
+            session.vars['beginningTime']=float(data['timerStarted'])
+
         if 'participants' in data:
             g.previousClicker = data['participants']
 
         if 'activeParticipants' in data:
             active_participants=data['activeParticipants']
 
-        
         session.vars.setdefault('who_in_agreement', [])
         session.vars['numAgree'] = len(session.vars['who_in_agreement'])
         NumAgree = session.vars['numAgree']
@@ -89,12 +91,8 @@ class MyPage(Page):
                     WhoAgrees.clear() 
                     list(map(lambda x: WhoAgrees.append(x), active_participants))
             else:
-                if previousNumInAgreement < 2:
-                    WhoAgrees.clear()
-                    list(map(lambda x: WhoAgrees.append(x), active_participants))
-                else:
-                    WhoAgrees.clear()
-                    list(map(lambda x: WhoAgrees.append(x), active_participants))
+                WhoAgrees.clear()
+                list(map(lambda x: WhoAgrees.append(x), active_participants))
                 session.vars['numAgree'] = len(session.vars['who_in_agreement'])
 
         print(session.vars['who_in_agreement'])
@@ -109,13 +107,15 @@ class MyPage(Page):
                 p2_score=data['payoffs']['2']
                 p3_score=data['payoffs']['3']
                 time_stamp=data['payoffs']['7']
+                time_since=float(data['payoffs']['8'])
+                since_beginning=(time_since-session.vars['beginningTime'])/1000
                 #change 150 to the maximum amount of time the session has
                 # currency_decay=100*((3-data['payoffs']['4'])/2) #decreases at a rate of 0.02 per second
                 # time_stamp=150-currency_decay
                 P1_agree = 1 if "clickedByUser1" in session.vars['who_in_agreement'] else 0
                 P2_agree = 1 if "clickedByUser2" in session.vars['who_in_agreement'] else 0
                 P3_agree = 1 if "clickedByUser3" in session.vars['who_in_agreement'] else 0
-                Report.create(Session_Code=g.session.code,Subject_ID=player.participant.code,Group_Num=g.id,Round_Num=player.custom_round_num,SubGroup_ID=data['payoffs']['5'], S1_Points=p1_score, S2_Points=p2_score, S3_Points=p3_score, P1_Agree=P1_agree, P2_Agree=P2_agree,P3_Agree=P3_agree,NumInAgreement=len(session.vars['who_in_agreement']), Timestamp=time_stamp)
+                Report.create(Session_Code=g.session.code,Subject_ID=player.participant.code,Group_Num=g.id,Round_Num=player.custom_round_num,SubGroup_ID=data['payoffs']['5'], S1_Points=p1_score, S2_Points=p2_score, S3_Points=p3_score, P1_Agree=P1_agree, P2_Agree=P2_agree,P3_Agree=P3_agree,NumInAgreement=len(session.vars['who_in_agreement']), Timestamp=time_stamp,Time_Since_Round_Start=since_beginning)
             currencyDecay = data['payoffs']['4']
 
             # Ensure default values if None is found
@@ -176,7 +176,7 @@ for i, page in enumerate(page_sequence):
 
 
 def custom_export(players):
-    yield ['Session_Code','Subject_ID', 'Group_Num', 'Round_Num', 'SubGroup_ID', 'S1_Points', 'S2_Points', 'S3_Points','P1_Agree','P2_Agree','P3_Agree', 'NumInAgreement', 'Timestamp']
+    yield ['Session_Code','Subject_ID', 'Group_Num', 'Round_Num', 'SubGroup_ID', 'S1_Points', 'S2_Points', 'S3_Points','P1_Agree','P2_Agree','P3_Agree', 'NumInAgreement', 'Timestamp','Time_Since_Round_Start']
     reports = Report.filter()
     for report_no in range(len(reports)):
         yield [
@@ -193,6 +193,7 @@ def custom_export(players):
             reports[report_no].P3_Agree,
             reports[report_no].NumInAgreement,
             reports[report_no].Timestamp,
+            reports[report_no].Time_Since_Round_Start
         ]
     for report in reports:
         report.delete()
