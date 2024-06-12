@@ -1,0 +1,293 @@
+{{ block title }}
+    Making Agreements
+{{ endblock }}
+
+{{ block content }}
+
+<div class="text"><p>During the real interactions, any of the three participants (including you) may click on any circle at any time.
+    When you click on a circle, the other two participants in your group will see this circle marked on their screen.
+    </p></div>
+    <div class="parentcontainer">
+        <div class="screen">
+            <div class="screen-header">Your Screen</div>
+            <div id="triangleContainerYou" class="triangle-container">
+                <div class="inner-container">
+                    <div id="triangleYou"></div>
+                    <div class="corner-label top-left">Participant A</div>
+                    <div class="corner-label top-right">Participant B</div>
+                    <div class="corner-label bottom">You</div>
+                </div>
+            </div>
+        </div>
+       
+        <div class="screen">
+            <div class="inactive">
+            <div class="screen-header">Participant A's Screen</div>
+            
+            <div id="triangleContainerA" class="triangle-container">
+                <div class="inner-container">
+                    <div id="triangleA"></div>
+                    <div class="corner-label top-left">Participant A</div>
+                    <div class="corner-label top-right">Participant B</div>
+                    <div class="corner-label bottom">You</div>
+                </div>
+            </div>
+        </div>
+        </div>
+   
+        <div class="screen">
+            <div class="inactive">
+            <div class="screen-header">Participant B's Screen</div>
+            <div id="triangleContainerB" class="triangle-container">
+                <div class="inner-container">
+                    <div id="triangleB"></div>
+                    <div class="corner-label top-left">Participant A</div>
+                    <div class="corner-label top-right">Participant B</div>
+                    <div class="corner-label bottom">You</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<script>
+window.buttonStates = {};
+window.selectedButton = null; // track the currently selected button for "Your Screen"
+window.selectedButtonA = null; // track the currently selected button for "Participant A's Screen"
+window.selectedButtonB = null; // track the currently selected button for "Participant B's Screen"
+
+document.addEventListener('DOMContentLoaded', function() {
+    const configurations = [
+        { containerId: 'triangleYou', originPanel: 'You', panelId: 1 },
+        { containerId: 'triangleA', originPanel: 'Participant A', panelId: 2 },
+        { containerId: 'triangleB', originPanel: 'Participant B', panelId: 3 }
+    ];
+
+    configurations.forEach(config => {
+        generateTriangle(config.containerId, 12, 15, config.originPanel, config.panelId);
+    });
+});
+
+function generateTriangle(containerId, n, points, originPanel, panelId) {
+    const container = document.getElementById(containerId);
+    const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
+    var bottomP = 0;
+    const mappings = {
+        1: (bottomP, leftP, rightP) => ({ bottomP, leftP, rightP }),
+        2: (bottomP, leftP, rightP) => ({ bottomP, leftP, rightP }),
+        3: (bottomP, leftP, rightP) => ({ bottomP, leftP, rightP })
+    };
+
+    for (var rowNum = numRows; rowNum >= 1; rowNum--) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'triangle-row';
+        var leftP = rowNum - 1;
+        var rightP = 0;
+        const scalingFactor = points / (numRows - 1);
+
+        for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
+            const button = document.createElement('button');
+            const { bottomP: rawBottomP, leftP: rawLeftP, rightP: rawRightP } = mappings[panelId](bottomP, leftP, rightP);
+            const scaledBottomP = formatCoordinate(rawBottomP * scalingFactor);
+            const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
+            const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
+            const buttonId = `${containerId}_${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
+            button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`;
+            window.buttonStates[buttonId] = [];
+
+            button.id = buttonId;
+            button.className = 'button';
+            button.type = 'button';
+            if (panelId !== 1) {
+                button.disabled = true; // disable buttons in panels 2 and 3
+            }
+            rowDiv.appendChild(button);
+
+            if (panelId === 1) {
+                button.addEventListener('click', function(e) {
+                    handleButtonClick(e.target.id, originPanel, panelId);
+                });
+            }
+            window.buttonStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
+
+            leftP--;
+            rightP++;
+        }
+        container.appendChild(rowDiv);
+        bottomP++;
+        leftP = rowNum - 2;
+        rightP = 0;
+    }
+}
+
+function handleButtonClick(buttonId, originPanel, panelId) {
+    if (window.selectedButton !== buttonId) {
+        if (window.selectedButton) {
+            document.getElementById(window.selectedButton).classList.remove('activeYou');
+        }
+
+        if (window.selectedButtonA) {
+            document.getElementById(window.selectedButtonA).classList.remove('activeA');
+        }
+
+        if (window.selectedButtonB) {
+            document.getElementById(window.selectedButtonB).classList.remove('activeB');
+        }
+
+        document.getElementById(buttonId).classList.add('activeYou');
+        window.selectedButton = buttonId;
+
+        const [participantA_button, participantB_button] = transformCoordinates(buttonId.split('_').slice(1).join('_'));
+        window.selectedButtonA = `triangleA_${participantA_button}`;
+        window.selectedButtonB = `triangleB_${participantB_button}`;
+
+        document.getElementById(window.selectedButtonA).classList.add('activeA');
+        document.getElementById(window.selectedButtonB).classList.add('activeB');
+
+        liveSend({
+            button_clicked: true,
+            button_id: buttonId,
+            origin_panel: originPanel,
+            panel_id: panelId
+        });
+    } else {
+        document.getElementById(buttonId).classList.remove('activeYou');
+        window.selectedButton = null;
+
+        const [participantA_button, participantB_button] = transformCoordinates(buttonId.split('_').slice(1).join('_'));
+        document.getElementById(`triangleA_${participantA_button}`).classList.remove('activeA');
+        document.getElementById(`triangleB_${participantB_button}`).classList.remove('activeB');
+        window.selectedButtonA = null;
+        window.selectedButtonB = null;
+
+        liveSend({
+            button_clicked: false,
+            button_id: buttonId,
+            origin_panel: originPanel,
+            panel_id: panelId
+        });
+    }
+}
+
+function formatCoordinate(value) {
+    if (Math.floor(value) !== value) {
+        return value.toFixed(1); 
+    }
+    return value; // Returns the value as is if it's an integer
+}
+
+function liveRecv(data) {
+    console.log("hi");
+    console.log(data);
+
+    var fullButtonId = data['button_id'];
+    var coordStr = fullButtonId.split('_').slice(1).join('_');
+
+    const [participantA_button, participantB_button] = transformCoordinates(coordStr);
+    console.log(`Transformed coordinates: ${participantA_button}, ${participantB_button}`);
+
+    var buttonYou = document.getElementById(fullButtonId);
+    var buttonA = document.getElementById(`triangleA_${participantA_button}`);
+    var buttonB = document.getElementById(`triangleB_${participantB_button}`);
+
+    // Clear previous selection
+    if (buttonYou && !data['button_clicked']) {
+        buttonYou.classList.remove('activeYou');
+    } else if (buttonYou) {
+        buttonYou.classList.add('activeYou');
+    }
+
+    if (buttonA && !data['button_clicked']) {
+        buttonA.classList.remove('activeA');
+    } else if (buttonA) {
+        buttonA.classList.add('activeA');
+    }
+
+    if (buttonB && !data['button_clicked']) {
+        buttonB.classList.remove('activeB');
+    } else if (buttonB) {
+        buttonB.classList.add('activeB');
+    }
+}
+
+function transformCoordinates(coordStr) {
+    const coords = coordStr.split('_');
+    const [a, b, c] = coords.map(Number);
+
+    const newCoord2 = `${c}_${a}_${b}`;
+    const newCoord1 = `${b}_${c}_${a}`;
+
+    return [newCoord1, newCoord2];
+}
+</script>
+<style>
+    .inactive{
+        background-color: lightgrey;
+        opacity: 0.6;
+    }
+
+    .screen {
+        position: relative;
+        width: 100%;
+        margin: 5px;
+        border: 2px solid #000;
+        border-radius: 15px;
+        background: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+    
+    .screen-header {
+        background: #333;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        font-size: 16px;
+    }
+    
+    .triangle-container {
+        display: inline-block;
+        width: 100%;
+        margin: 0 auto;
+    }
+    
+    .parentcontainer {
+        display: flex;
+        justify-content: space-evenly;
+        width: 100%;
+    }
+    
+    .inner-container {
+        padding: 20px;
+        border: 1px solid white;
+    }
+    
+    .triangle-row {
+        display: flex;
+        justify-content: center;
+    }
+    
+    .button {
+        width: 30px;
+        height: 30px;
+        margin: 2px;
+        border-radius: 15px;
+        border: 1px solid black;
+    }
+    
+    .button.activeYou {
+        border: none;
+        box-shadow: 0 0 0 2px green; 
+    }
+
+    .button.activeA {
+        border: none;
+        box-shadow: 0 0 0 2px red; 
+    }
+    .button.activeB{
+        border: none;
+        box-shadow: 0 0 0 2px blue; 
+    }
+</style>
+{{ next_button }}
+{{ endblock }}
