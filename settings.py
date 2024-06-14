@@ -6,7 +6,9 @@ SESSION_CONFIGS = [
         # put all the sessions you want to run here
         name="triangles",
         display_name="show one button",
-        app_sequence=['triangles'],
+        app_sequence=['filter_app',
+                      'tutorial_one',
+                      'triangles'],
         num_demo_participants=3,
     )
 ]

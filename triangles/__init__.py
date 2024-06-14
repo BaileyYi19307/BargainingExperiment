@@ -186,6 +186,7 @@ class FinalPage(Page):
 
 page_sequence = [WaitingRoom, MyPage, ResultsPage] * totalRounds + [FinalPage]
 
+
 print(f"Total pages: {len(page_sequence)}")
 for i, page in enumerate(page_sequence):
     print(f"Page {i + 1}: {page.__name__}")

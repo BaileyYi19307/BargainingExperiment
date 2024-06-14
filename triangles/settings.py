@@ -20,7 +20,7 @@ SESSION_CONFIG_DEFAULTS = dict(
     real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
 )
 
-PARTICIPANT_FIELDS = []
+PARTICIPANT_FIELDS = ["name","gender"]
 SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime']
 
 # ISO-639 code

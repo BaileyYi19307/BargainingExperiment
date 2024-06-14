@@ -180,7 +180,15 @@ class Three_Suggesting_Divisions(Page):
         if 'button_clicked' in data:
             return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
-page_sequence = [first_instructions,One_Understanding_The_Triangle,Two_Making_Agreements, Three_Suggesting_Divisions]
+class Four_Tutorial_stage_Two(Page):
+    pass
+
+
+class final_page(Page):
+    pass
+
+
+page_sequence = [first_instructions,One_Understanding_The_Triangle,Two_Making_Agreements, Three_Suggesting_Divisions, Four_Tutorial_stage_Two, final_page]
 
 
 
