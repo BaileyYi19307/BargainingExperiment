@@ -63,7 +63,6 @@
         generateTriangle(totalNodes, totalPoints);
         positionCornerLabels();
         startDecay();
-        {#startTimer(100);#}
     });
   function startDecay() {
             var currentValue = 3.00;
@@ -103,6 +102,7 @@
 
             for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
                 const {bottomP: rawBottomP, leftP: rawLeftP, rightP: rawRightP} = mappings[window.playerId](bottomP, leftP, rightP);
+
                 const scaledBottomP = formatCoordinate(rawBottomP * scalingFactor);
                 const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
                 const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
@@ -165,6 +165,7 @@
     }
 
     function handleButtonClick(buttonId) {
+        console.log(buttonId);
         liveSend({
             button_clicked: true, button_id:buttonId,participants:{{player.id_in_group}}
         });
