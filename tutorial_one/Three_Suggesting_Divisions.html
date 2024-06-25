@@ -1,16 +1,26 @@
 {{ block title }}
 {{ endblock }}
 {{ block content }}
+
+<div class="title"><h1>TUTORIAL STAGE 2</h1></div>
+<br>
+
+<ul>
+    <li><strong>Exercises:</strong>
+        <ul>
+            <li>Watch the top line of the screen and see how the exchange rate of points to euros decreases.</li>
+            <li>Click the blue circle and see how the “Time until agreement” starts counting down until zero, when the round will “end” and the number of points you receive is determined. <strong>Then click “Play another tutorial round” and repeat with the orange circle and click “Play another tutorial round” again.</strong></li>
+            <li>Now try clicking on the blue circle then clicking on an empty circle or outside the triangle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then disappears when you click elsewhere.</li>
+            <li>Now try clicking on the blue circle then clicking on the orange circle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then starts again at 10 seconds when you click on the second circle.</li>
+            <li>You can now experiment with the tutorial screen as much as you like.</li>
+        </ul>
+    </li>
+</ul>
+
 <p>When another participant in your group clicks on a circle on their screen, it will be marked on your screen in the color corresponding to that participant: orange for “Participant A”, blue for “Participant B”</p>
 <div class="header-container">
-    <div class="currency-decay">1 EU= <span id="euValue">3.00</span></div>
+    <div class="currency-decay" id="currency">1 EU= <span id="euValue">3.00</span></div>
     <div class="timers-container">
-{#        <div id="timer">#}
-{#            Time to Agreement:#}
-{#        </div>#}
-{#        <div id="stopwatch">#}
-{#        </div>#}
-
         <div id="agreement-timer">
             Time to Agreement:
         </div>
@@ -27,10 +37,16 @@
             <span id="hover-p3-value">You</span>
         </div>
     </div>
-
 </div>
 
-
+<div id="results-box" style="display:none;">
+    <div class="content-container">
+        <p class="results-info">You get: <span class="highlight" id="result-payoff"></span></p>
+        <p class="results-info">Original Euros Earned: <span class="highlight" id="result-ogCurrency"></span></p>
+        <p class="results-info">Final Euros Earned (after decay): <span class="highlight" id="result-currency"></span></p>
+        <button type="button" id="repeat-tutorial-btn" class="next-button"><h1>Play Another Tutorial Round</h1></button>
+    </div>
+</div>
 
 <div class="parent-container">
     <div id="triangleContainer"></div>
@@ -39,8 +55,16 @@
     <div class="corner-label bottom" id="youLabel">You</div>
 </div>
 
+<br><br><br>
+<p><strong>When you have understood how the interactions work, click on “Finish tutorial” button. When all participants have finished the tutorial, the real interactions will begin.</strong></p>
+<br><br>
+<button type="submit" id="finish-tutorial-btn"><h1>Finish Tutorial</h1></button>
 
 <script>
+    document.getElementById("repeat-tutorial-btn").addEventListener("click", function() {
+        location.reload();  // Refresh the page to simulate repeating the tutorial
+    });
+
     let count=0;
 
     var config = {
@@ -64,33 +88,31 @@
         makeBot1Choose();
         makeBot2Choose();
         positionCornerLabels();
-        // startDecay();
+        startDecay();
     });
 
-  function makeBot1Choose(){
-    liveSend("player1bot");
-  }
-  function makeBot2Choose(){
-    liveSend("player2bot");
-  }
+    function makeBot1Choose(){
+        liveSend("player1bot");
+    }
+    function makeBot2Choose(){
+        liveSend("player2bot");
+    }
 
-  function startDecay() {
-            var currentValue = 3.00;
-            var display = document.getElementById('euValue');
-            liveSend({'timerStarted':Date.now()}); //start of the timer reference point
+    function startDecay() {
+        var currentValue = 3.00;
+        var display = document.getElementById('euValue');
+        liveSend({'timerStarted': Date.now()}); //start of the timer reference point
 
-            var decayInterval = setInterval(function() {
-                if (currentValue <= 0) {
-                    document.querySelector('form').submit();
-                } else {
-                    currentValue -= 0.02;
-                    display.textContent = currentValue.toFixed(2);
-                }
-            }, 1000);
-        }
+        var decayInterval = setInterval(function() {
+            if (currentValue <= 0) {
+                displayResultsEnd();
+            } else {
+                currentValue -= 0.02;
+                display.textContent = currentValue.toFixed(2);
+            }
+        }, 1000);
+    }
 
-
-    //generate a triangle of n nodes, among which points are divided equally
     function generateTriangle(n, points) {
         const container = document.getElementById('triangleContainer');
         const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
@@ -116,7 +138,6 @@
                 const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
                 const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
 
-
                 const buttonId = `btn${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
                 window.buttonStates[buttonId] = []; // Initialize as an empty array
                 const button = document.createElement('button');
@@ -126,12 +147,10 @@
                 button.type = 'button';
                 rowDiv.appendChild(button);
 
-                //clicking the button
                 button.addEventListener('click', function(e) {
                     handleButtonClick(e.target.id);
                 });
 
-                //hovering over - show the point values for each player in the corner of the triangle
                 button.addEventListener('mouseenter', function(e) {
                     var hoverValues = e.target.dataset.coords.split(',').map(function(coord) {
                         return coord.trim().replace(/[()]/g, '');
@@ -140,7 +159,6 @@
                     showAndPositionHoverValue('hover-p1-value', mappedValues[0], 'topLeft');
                     showAndPositionHoverValue('hover-p2-value', mappedValues[1], 'topRight');
                     showAndPositionHoverValue('hover-p3-value', mappedValues[2], 'bottom');
-
                 });
 
                 button.addEventListener('mouseleave', function(e) {
@@ -155,7 +173,6 @@
                 }
                 window.buttonStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
 
-                //move onto next button
                 leftP--;
                 rightP++;
             }
@@ -179,8 +196,7 @@
             button_clicked: true, button_id:buttonId});
     }
 
-
-    function liveRecv(data) { //data received includes the buttonId and the participant who clicked it
+    function liveRecv(data) {
         var button = document.getElementById(data.button_id);
         var btnState = buttonStates[data.button_id];
 
@@ -192,15 +208,11 @@
             btnState.clickedByUser3 = !btnState.clickedByUser3;
         }
 
-
-        //for all other buttons ('otherButtonId'), state is reset based on player who clicks
-        //i.e. if player 1 clicks a button, all other buttons set to "not-clicked" for player 1
         Object.keys(buttonStates).forEach(function(otherButtonId) {
-            //executes only for buttons other than the one clicked
             if (otherButtonId !== data.button_id) {
                 var otherBtnsState = buttonStates[otherButtonId];
                 if (data.player_id === 1) {
-                    otherBtnsState.clickedByUser1 = false; //clickedByUser1 for all other buttons set to 'false
+                    otherBtnsState.clickedByUser1 = false;
                 } else if (data.player_id === 2) {
                     otherBtnsState.clickedByUser2 = false;
                 } else if (data.player_id === 3) {
@@ -217,73 +229,97 @@
             setPlayerValues(data.button_id);
         }
         updatePayoffs();
-
     }
 
     let agreementButtonID = null;  // ID of the button currently in agreement
     let prevButtonStates = {};  // stores previous states for all buttons
 
     function update(buttonID) {
-        // calculate the current sum for the button being updated
         const currentSum = Object.values(window.buttonStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
         const activeParticipants = Object.entries(window.buttonStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
 
-
-        // if there's a button under agreement, check its state
         if (agreementButtonID !== null) {
             const agreementCurrentSum = Object.values(window.buttonStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
-
-            // check if num of active clicks on the agreement button drops below two
             if (agreementCurrentSum < 2) {
                 stopAgreementTimer();
                 console.log(`Agreement broken on button ${agreementButtonID}`);
-                agreementButtonID = null;  // Clear the agreement state
-
+                agreementButtonID = null;
             }
         }
 
         liveSend({ numInAgreement: currentSum, activeParticipants: activeParticipants });
 
-        // if the current button reaches an agreement condition and no other agreement is active
         if (currentSum >= 2 && agreementButtonID === null) {
             startAgreementTimer();
             agreementButtonID = buttonID;
             console.log(`Agreement started on button ${buttonID}`);
         }
 
-        // store the current state for the next update
         prevButtonStates[buttonID] = { ...window.buttonStates[buttonID] };
     }
 
-function startAgreementTimer() {
-    const agreementDisplay = document.getElementById('agreement-timer');
-    let seconds = config.ratificationTime; // Ensure proper syntax with a semicolon
+    function startAgreementTimer() {
+        const agreementDisplay = document.getElementById('agreement-timer');
+        let seconds = config.ratificationTime;
 
-    window.agreementTimer = setInterval(() => {
-        seconds--;
-        agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
-        if (seconds === 0) {
-            // updatePayoffsInAgreement()            
-            document.querySelector('form').submit(); // Submit the form to move to the next screen
-        }
-    }, 1000);
-}
+        window.agreementTimer = setInterval(() => {
+            seconds--;
+            agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
+            if (seconds === 0) {
+                clearInterval(window.agreementTimer);
+                displayResults();
+            }
+        }, 1000);
 
+    }
+
+    
+    function displayResultsEnd() {
+        // Hide the parent container and participant labels
+        document.getElementById('triangleContainer').style.display = 'none';
+        document.getElementById('participant2Label').style.display = 'none';
+        document.getElementById('participant3Label').style.display = 'none';
+        document.getElementById('youLabel').style.display = 'none';
+        document.getElementById('agreement-timer').style.display='none';
+        document.getElementById('currency').style.display='none';
+
+        // Display the results box
+        document.getElementById('results-box').style.display = 'block';
+
+        document.getElementById('result-payoff').textContent = 0;
+        // Update the results with player data
+        document.getElementById('result-ogCurrency').textContent = 0.00;
+        document.getElementById('result-currency').textContent = 0.00;
+    }
+
+
+    function displayResults() {
+        document.getElementById('triangleContainer').style.display = 'none';
+        document.getElementById('participant2Label').style.display = 'none';
+        document.getElementById('participant3Label').style.display = 'none';
+        document.getElementById('youLabel').style.display = 'none';
+        document.getElementById('agreement-timer').style.display = 'none';
+        document.getElementById('currency').style.display = 'none';
+
+        document.getElementById('results-box').style.display = 'block';
+
+        const p1Value = parseFloat(document.getElementById('p1-value').textContent.trim());
+        const currentDecay = parseFloat(document.getElementById('euValue').textContent.trim());
+        
+        document.getElementById('result-payoff').textContent = p1Value;
+        document.getElementById('result-ogCurrency').textContent = (p1Value * 3.00).toFixed(2);
+        document.getElementById('result-currency').textContent = (p1Value * currentDecay).toFixed(2);
+    }
 
     function stopAgreementTimer() {
-        // livesend({payoffs:{6:false}});
         clearInterval(window.agreementTimer);
         window.agreementTimer = null;
         document.getElementById('agreement-timer').textContent = 'Time to Agreement:';
     }
 
-
     function updateButtonAppearance(button, btnState) {
-
-        //reset button back to neutral state
         button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
 
-        //map playerId to a specific color scheme from perspective of each player
         var playerColor = {
             1: {1: 'green', 2: 'red', 3: 'blue'},
             2: {1: 'blue', 2: 'green', 3: 'red'},
@@ -299,58 +335,40 @@ function startAgreementTimer() {
             return colors.join('-');
         }
 
-        //who's currently clicking on this button?
         var activePlayers = [];
-        if (btnState.clickedByUser1){
-            activePlayers.push(1);
-        }
-        if (btnState.clickedByUser2) {
-            activePlayers.push(2);
-        }
-        if (btnState.clickedByUser3) {
-            activePlayers.push(3);
-        }
+        if (btnState.clickedByUser1) activePlayers.push(1);
+        if (btnState.clickedByUser2) activePlayers.push(2);
+        if (btnState.clickedByUser3) activePlayers.push(3);
 
-
-
-        if (activePlayers.length === 3) { //everyone's clicking on this button
+        if (activePlayers.length === 3) {
             button.classList.add('all-borders');
-        } else if (activePlayers.length === 2) { //two players are clicking on this button
+        } else if (activePlayers.length === 2) {
             button.classList.add(getCombinedColorClass(activePlayers[0], activePlayers[1]));
-
-        } else if (activePlayers.length === 1) { //one player is clicking on this button
+        } else if (activePlayers.length === 1) {
             button.classList.add(getColorBorderClass(activePlayers[0]));
         }
-
     }
 
-function updatePayoffs() {
-    // Get payoff values from the input fields
-    const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
-    console.log(payoff1);
-    const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
-    const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
+    function updatePayoffs() {
+        const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
+        const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
+        const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
 
-    const currencyDecay= parseFloat(document.getElementById('euValue').textContent);
-    var time = new Date();
+        const currencyDecay = parseFloat(document.getElementById('euValue').textContent);
+        var time = new Date();
 
-    console.log("Hi");
-    // Send the new payoffs to the server
-    liveSend({
-        payoffs: {
-            1: payoff1,
-            2: payoff2,
-            3: payoff3,
-            4: currencyDecay,
-            5: window.playerId,
-            7: time.toISOString(),
-            8: Date.now()
-        }
-    });
-}
-
-
-
+        liveSend({
+            payoffs: {
+                1: payoff1,
+                2: payoff2,
+                3: payoff3,
+                4: currencyDecay,
+                5: window.playerId,
+                7: time.toISOString(),
+                8: Date.now()
+            }
+        });
+    }
 
     function setPlayerValues(buttonId) {
         var values = buttonId.replace('btn', '').split('_').map(Number);
@@ -360,18 +378,12 @@ function updatePayoffs() {
         document.getElementById('p3-value').textContent = values[2];
     }
 
-    //returns values mapping based on playerID to be shown in hover values
     function mapValuesBasedOnPlayer(values, playerId) {
-        // This function will return the values array reordered based on the player ID
         switch(playerId) {
-            case 1: // Original order for Player 1
-                return [values[1],values[2],values[0]]
-            case 2: // Switch positions for Player 2 perspective
-                return [values[2], values[0], values[1]];
-            case 3: // Different order for Player 3
-                return [values[0], values[1], values[2]];
-            default:
-                return [values[1],values[2],values[0]]
+            case 1: return [values[1], values[2], values[0]];
+            case 2: return [values[2], values[0], values[1]];
+            case 3: return [values[0], values[1], values[2]];
+            default: return [values[1], values[2], values[0]];
         }
     }
 
@@ -386,18 +398,18 @@ function updatePayoffs() {
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
         if (position === 'topLeft') {
-            valueSpan.style.left = (containerRect.left + scrollLeft-25) + 'px';
+            valueSpan.style.left = (containerRect.left + scrollLeft - 25) + 'px';
             valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
         } else if (position === 'topRight') {
-            valueSpan.style.left = (containerRect.right + scrollLeft +25 - valueSpan.offsetWidth) + 'px';
+            valueSpan.style.left = (containerRect.right + scrollLeft + 25 - valueSpan.offsetWidth) + 'px';
             valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
         } else if (position === 'bottom') {
             valueSpan.style.left = (containerRect.left + scrollLeft + (containerRect.width - valueSpan.offsetWidth) / 2) + 'px';
-            valueSpan.style.top = (containerRect.bottom + scrollTop +25 - valueSpan.offsetHeight) + 'px';
+            valueSpan.style.top = (containerRect.bottom + scrollTop + 25 - valueSpan.offsetHeight) + 'px';
         }
     }
 
-     function positionCornerLabels() {
+    function positionCornerLabels() {
         var triangleContainer = document.getElementById('triangleContainer');
         var triangleRect = triangleContainer.getBoundingClientRect();
 
@@ -405,112 +417,61 @@ function updatePayoffs() {
         var participantBLabel = document.getElementById('participant3Label');
         var youLabel = document.getElementById('youLabel');
 
-        // Calculate the scroll offsets
         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-        // Position Participant A label
         participant2Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
         participant2Label.style.left = (triangleRect.left + scrollLeft - 65) + 'px';
 
-        // Position Participant B label
         participant3Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
-        participant3Label.style.left = (triangleRect.right + scrollLeft-30) + 'px';
+        participant3Label.style.left = (triangleRect.right + scrollLeft - 30) + 'px';
 
-        // Position 'You' label
         youLabel.style.top = (triangleRect.bottom + scrollTop + 25) + 'px';
         youLabel.style.left = (triangleRect.left + scrollLeft + (triangleRect.width - youLabel.offsetWidth) / 2) + 'px';
     }
 
-    // Call this function initially and on window resize or scroll
-
-        function startTimer(duration) {
-            var display = document.getElementById('timer');
-            var displayStopwatch=document.getElementById('stopwatch');
-            var stopwatch=0;
-            var timer = duration, minutes, seconds;
-            var interval = setInterval(function () {
-                stopwatch++;
-                minutes = parseInt(timer / 60, 10);
-                seconds = parseInt(timer % 60, 10);
-
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
-
-                display.textContent = 'Time left: ' + minutes + ":" + seconds;
-
-                if (--timer < 0) {
-                    clearInterval(interval);
-                    var form = document.querySelector('form');
-                    if(form) {
-                        form.submit();
-                    }
-                }
-            }, 1000);
-        }
-
-
-    function setPlayerValues(buttonId) {
-        var values = buttonId.replace('btn', '').split('_').map(Number);
-
-        document.getElementById('p1-value').textContent = values[0];
-        document.getElementById('p2-value').textContent = values[1];
-        document.getElementById('p3-value').textContent = values[2];
-    }
-
-    // get and store the player's ID
     window.playerId = {{ player.id_in_group }};
-
-
 
 </script>
 
 <style>
-
-    #triangleContainer{
+    #triangleContainer {
         display: inline-block;
-        margin-top:50px;
+        margin-top: 50px;
     }
     .header-container {
         display: flex;
-        flex-direction: column; /* Stack the child divs vertically */
+        flex-direction: column;
         align-items: center;
-        justify-content:center;
+        justify-content: center;
     }
-
     .values-container, .timers-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        width:100%;
+        width: 100%;
     }
-
     #hover-p1-value, #hover-p2-value, #hover-p3-value {
-    position: absolute;
-    display: none; /* Hide initially */
-}
-
+        position: absolute;
+        display: none;
+    }
     #timer, #agreement-timer {
-        flex-basis: 50%; /* Divide the space equally between the two elements */
-        text-align: center; /* Center the text within each element */
+        flex-basis: 50%;
+        text-align: center;
         margin: 0;
-        padding:0;
+        padding: 0;
         font-size: 20px;
     }
-
-    .currency-decay{
-        height:30px;
-        width:200px;
-        border:1px solid green;
+    .currency-decay {
+        height: 30px;
+        width: 200px;
+        border: 1px solid green;
         text-align: center;
     }
-
-    #player-values{
-        display:none;
-        margin-bottom:30px;
+    #player-values {
+        display: none;
+        margin-bottom: 30px;
     }
-
-
     .triangle-row {
         display: flex;
         justify-content: center;
@@ -520,103 +481,108 @@ function updatePayoffs() {
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        font-size: 0px; /* Keep text hidden by default */
-        line-height: 30px; /* Center text vertically */
+        font-size: 0px;
+        line-height: 30px;
         color: black;
         border: 1px solid #ccc;
         background-color: white;
-        position: relative; /* Set position context for the pseudo-element */
-        overflow: hidden; /* Prevents content from spilling out */
+        position: relative;
+        overflow: hidden;
     }
-
-        .button:hover {
-        background-color: rgba(0, 0, 0, 0.5); /* Shading effect */
+    .button:hover {
+        background-color: rgba(0, 0, 0, 0.5);
     }
-
-
-    .red-border{
+    .red-border {
         border: 2px solid red;
     }
-
-    .blue-border{
+    .blue-border {
         border: 2px solid blue;
     }
-
-    .green-border{
+    .green-border {
         border: 2px solid green;
     }
-
-    /*.both-borders{*/
-    /*    border: none; !* Remove default border *!*/
-    /*    box-shadow: 0 0 0 2px red, 0 0 0 4px blue; !* Create a purple border with red and blue shadows *!*/
-    /*}*/
-
-    .red-blue{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    .red-blue {
+        border: none;
+        box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
     }
-
-    .red-green{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
+    .red-green {
+        border: none;
+        box-shadow: 0 0 0 2px red, 0 0 0 4px green;
     }
-
-    .green-blue{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    .green-blue {
+        border: none;
+        box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
     }
-
-    .blue-red{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    .blue-red {
+        border: none;
+        box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
     }
-
-    .green-red{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
+    .green-red {
+        border: none;
+        box-shadow: 0 0 0 2px red, 0 0 0 4px green;
     }
-
-    .blue-green{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
+    .blue-green {
+        border: none;
+        box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
     }
-
-    .all-borders{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green; /* Create a purple border with red and blue shadows */
+    .all-borders {
+        border: none;
+        box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green;
     }
-
     .red-fill {
-        background-color: red; /* Fills the button with red color */
+        background-color: red;
     }
-
-    .layers{
-        display:flex;
+    .layers {
+        display: flex;
         flex-direction: row;
         justify-content: center;
         align-content: center;
     }
-
-    .parent-container{
+    .parent-container {
         display: flex;
         align-content: center;
         justify-content: center;
-        min-width:500px;
+        min-width: 500px;
     }
-
     .corner-label {
         position: absolute;
         font-size: 16px;
-        white-space:nowrap;
+        white-space: nowrap;
     }
-
-
-
+    .content-container {
+        text-align: center;
+        padding: 20px;
+        background-color: #f7f7f7;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        margin: auto;
+        max-width: 500px;
+    }
+    .results-info {
+        font-size: 18px;
+        margin: 10px 0;
+    }
+    .highlight {
+        font-weight: bold;
+        color: #333;
+    }
+    .next-button {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 20px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+    }
+    .next-button:hover {
+        background-color: #45a049;
+    }
 </style>
-
-
-{{ formfields }}
-{{ next_button }}
-
 
 {{ endblock }}
