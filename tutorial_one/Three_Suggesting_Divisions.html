@@ -9,9 +9,9 @@
     <li><strong>Exercises:</strong>
         <ul>
             <li>Watch the top line of the screen and see how the exchange rate of points to euros decreases.</li>
-            <li>Click the blue circle and see how the “Time until agreement” starts counting down until zero, when the round will “end” and the number of points you receive is determined. <strong>Then click “Play another tutorial round” and repeat with the orange circle and click “Play another tutorial round” again.</strong></li>
-            <li>Now try clicking on the blue circle then clicking on an empty circle or outside the triangle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then disappears when you click elsewhere.</li>
-            <li>Now try clicking on the blue circle then clicking on the orange circle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then starts again at 10 seconds when you click on the second circle.</li>
+            <li><input type="checkbox" class="exercise-checkbox">Click the blue circle and see how the “Time until agreement” starts counting down until zero, when the round will “end” and the number of points you receive is determined. <strong>Then click “Play another tutorial round” and repeat with the orange circle and click “Play another tutorial round” again.</strong></li>
+            <li><input type="checkbox" class="exercise-checkbox">Now try clicking on the blue circle then clicking on an empty circle or outside the triangle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then disappears when you click elsewhere.</li>
+            <li><input type="checkbox" class="exercise-checkbox">Now try clicking on the blue circle then clicking on the orange circle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then starts again at 10 seconds when you click on the second circle.</li>
             <li>You can now experiment with the tutorial screen as much as you like.</li>
         </ul>
     </li>
@@ -89,6 +89,8 @@
         makeBot2Choose();
         positionCornerLabels();
         startDecay();
+        setupExerciseChecklist();
+
     });
 
     function makeBot1Choose(){
@@ -97,6 +99,23 @@
     function makeBot2Choose(){
         liveSend("player2bot");
     }
+
+
+    function setupExerciseChecklist() {
+    const checkboxes = document.querySelectorAll('.exercise-checkbox');
+    const finishButton = document.getElementById('finish-tutorial-btn');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            finishButton.disabled = !allChecked;
+        });
+    });
+
+    // Initial check in case some checkboxes are already checked (unlikely, but just in case)
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    finishButton.disabled = !allChecked;
+}
 
     function startDecay() {
         var currentValue = 3.00;
