@@ -20,9 +20,9 @@ class Group(BaseGroup):
 
 
 class Player(BasePlayer):
-    age = models.IntegerField(label="How old are you?",
+    age = models.IntegerField(label="1. What is your age?",
                               min=12,max=60)
-    country = models.StringField(label="What is your country of origin?",
+    country = models.StringField(label="2. In which country were you born?",
                                 choices=['Other','Afghanistan', 'Aland Islands', 'Albania', 'Algeria', 'American Samoa',
                                          'Andorra', 'Angola', 'Anguilla', 'Antarctica', 'Antigua and Barbuda',
                                          'Argentina', 'Armenia', 'Aruba', 'Australia', 'Austria', 'Azerbaijan',
@@ -78,11 +78,11 @@ class Player(BasePlayer):
                                          'Venezuela, Bolivarian Republic of', 'Viet Nam', 'Virgin Islands, British',
                                          'Virgin Islands, U.S.', 'Wallis and Futuna', 'Yemen', 'Zambia', 'Zimbabwe']
                                 )
-    gender = models.StringField(label="What is your gender?",
+    gender = models.StringField(label="3. What is your gender?",
                                 choices= ["Female", "Male", "Other", "Do not wish to respond"],
                                 widget=widgets.RadioSelect,
                                 )
-    education = models.StringField(label="What is your highest education level?",
+    education = models.StringField(label="4. What is your highest education level?",
                                    choices=["Did not complete high school", "Completed high school", "Completed college degree" ,"Master’s degree", "PhD"]
                                    )
 
