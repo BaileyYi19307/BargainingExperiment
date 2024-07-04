@@ -20,6 +20,8 @@ class Group(BaseGroup):
 
 
 class Player(BasePlayer):
+    age = models.IntegerField(label="How old are you?",
+                              min=12,max=60)
     country = models.StringField(label="What is your country of origin?",
                                 choices=['Other','Afghanistan', 'Aland Islands', 'Albania', 'Algeria', 'American Samoa',
                                          'Andorra', 'Angola', 'Anguilla', 'Antarctica', 'Antigua and Barbuda',
@@ -76,24 +78,19 @@ class Player(BasePlayer):
                                          'Venezuela, Bolivarian Republic of', 'Viet Nam', 'Virgin Islands, British',
                                          'Virgin Islands, U.S.', 'Wallis and Futuna', 'Yemen', 'Zambia', 'Zimbabwe']
                                 )
-    age = models.IntegerField(label="How old are you?",
-                              min=17,max=30)
     gender = models.StringField(label="What is your gender?",
-                                choices= ["Female", "Male"],
+                                choices= ["Female", "Male", "Other", "Do not wish to respond"],
                                 widget=widgets.RadioSelect,
                                 )
-    year = models.StringField(label="What year are you currently in?",
-                                   choices=["Freshman", "Sophomore", "Junior" ,"Senior"]
-                                   )
-    ethnicity = models.StringField(label="What is your race/ethnicity?",
-                                   choices=["White","Black or African American","American Indian or Alaska Native","Asian","Hispanic or Latino", "Native Hawaiian or Other Pacific Islander","Others"]
+    education = models.StringField(label="What is your highest education level?",
+                                   choices=["Did not complete high school", "Completed high school", "Completed college degree" ,"Master’s degree", "PhD"]
                                    )
 
 
 # PAGES
 class Survey(Page):
     form_model = 'player'
-    form_fields = ['country', 'age', 'gender','year', 'ethnicity']
+    form_fields = ['age', 'country', 'gender', 'education']
     @staticmethod
     def is_displayed(player: Player):
         return player.round_number == 1

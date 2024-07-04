@@ -6,13 +6,13 @@ Your app description
 """
 
 totalRounds = 5
-random_grouping = models.BooleanField(initial = True)          # true is random
+random_grouping = models.BooleanField(initial=True)  # true is random
 
 
 class C(BaseConstants):
     NAME_IN_URL = 'tutorial_one'
     PLAYERS_PER_GROUP = None
-    NUM_ROUNDS = 1          # number of cycles of the entire game
+    NUM_ROUNDS = 1  # number of cycles of the entire game
 
 
 class Subsession(BaseSubsession):
@@ -28,25 +28,29 @@ class Subsession(BaseSubsession):
         group_matrix = [players[i:i + group_size] for i in range(0, len(players), group_size)]
         self.set_group_matrix(group_matrix)
 
+
 class Group(BaseGroup):
-    button_clicked=models.BooleanField(initial=False)
-    previousClicker=models.IntegerField(initial=0)
+    button_clicked = models.BooleanField(initial=False)
+    previousClicker = models.IntegerField(initial=0)
+
 
 class Player(BasePlayer):
     ogCurrency = models.FloatField(initial=0)
     currency = models.FloatField(initial=0)
-    custom_round_num = models.IntegerField(initial=1)       # manual round number
+    custom_round_num = models.IntegerField(initial=1)  # manual round number
     repeat_tutorial = models.BooleanField(initial=False)
+
 
 class first_instructions(Page):
     pass
+
 
 class One_Understanding_The_Triangle(Page):
     @staticmethod
     def live_method(player, data):
         if 'button_clicked' in data:
             return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
-    
+
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
         player.custom_round_num += 1
@@ -54,11 +58,13 @@ class One_Understanding_The_Triangle(Page):
 
 class Two_Making_Agreements(Page):
     @staticmethod
-    def live_method(player,data):
+    def live_method(player, data):
         if 'button_clicked' in data:
             print(data['button_id'])
             print("lol")
-            return {0: {'button_id': data["button_id"], 'origin_panel': data["origin_panel"], "button_clicked": data["button_clicked"],"panelId":data['panel_id']}}
+            return {0: {'button_id': data["button_id"], 'origin_panel': data["origin_panel"],
+                        "button_clicked": data["button_clicked"], "panelId": data['panel_id']}}
+
 
 class Three_Suggesting_Divisions(Page):
 
@@ -180,7 +186,8 @@ class final_page(Page):
     pass
 
 
-page_sequence = [first_instructions,One_Understanding_The_Triangle,Two_Making_Agreements, Three_Suggesting_Divisions, final_page]
+page_sequence = [first_instructions, One_Understanding_The_Triangle, Two_Making_Agreements, Three_Suggesting_Divisions,
+                 final_page]
 
 
 
