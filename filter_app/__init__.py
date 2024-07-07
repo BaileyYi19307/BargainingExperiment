@@ -78,22 +78,43 @@ class Player(BasePlayer):
                                          'Venezuela, Bolivarian Republic of', 'Viet Nam', 'Virgin Islands, British',
                                          'Virgin Islands, U.S.', 'Wallis and Futuna', 'Yemen', 'Zambia', 'Zimbabwe']
                                 )
-    gender = models.StringField(label="3. What is your gender?",
+    education = models.StringField(label="3. What is your highest education level?",
+                                   choices=["Did not complete high school", "Completed high school",
+                                            "Completed college degree", "Master’s degree", "PhD"]
+                                   )
+    gender = models.StringField(label="4. What is your gender?",
                                 choices= ["Female", "Male", "Other", "Do not wish to respond"],
                                 widget=widgets.RadioSelect,
                                 )
-    education = models.StringField(label="4. What is your highest education level?",
-                                   choices=["Did not complete high school", "Completed high school", "Completed college degree" ,"Master’s degree", "PhD"]
-                                   )
-
+    icon = models.StringField(label="4a. Choose an icon to represent you", choices=[
+        ("female_icon1.png", "Image 1"),
+        ("female_icon2.png", "Image 2"),
+        ("male_icon1.png", "Image 3"),
+        ("male_icon2.png", "Image 4")
+    ])
 
 # PAGES
 class Survey(Page):
     form_model = 'player'
-    form_fields = ['age', 'country', 'gender', 'education']
+    form_fields = ['age', 'country', 'education', 'gender', 'icon']
+
     @staticmethod
     def is_displayed(player: Player):
         return player.round_number == 1
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        icons = [
+            ("female_icon1.png", "Image 1"),
+            ("female_icon2.png", "Image 2"),
+            ("male_icon1.png", "Image 3"),
+            ("male_icon2.png", "Image 4")
+        ]
+        return {'icons': icons}
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        player.participant.vars['selected_icon'] = player.icon
 
 
 

@@ -3,5 +3,15 @@
 
 <p><b>Please answer these questions about yourself!</b></p>
 {% formfields %}
+<div>
+    <div>
+        {% for filename, label in icons %}
+            <div style="display:inline-block; text-align:center; margin:10px;">
+                <img src="/images/{{ filename }}" alt="{{ label }}" style="width:100px;height:100px;"><br>
+                {{ label }}
+            </div>
+        {% endfor %}
+    </div>
+</div>
 {{ next_button }}
 {{ endblock }}

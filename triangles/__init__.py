@@ -9,6 +9,8 @@ Your app description
 
 totalRounds = 5
 random_grouping = models.BooleanField(initial = True)          # true is random
+rounds_payment = random.sample(range(1, totalRounds + 1), 3)
+print(f"Selected payment rounds: {rounds_payment}")
 
 tmp = 0
 
@@ -27,11 +29,11 @@ class Subsession(BaseSubsession):
         else:
             self.group_fixed()
 
+        self.session.vars['payment_rounds'] = rounds_payment
+
         for player in self.get_players():
             player.round_payoffs = json.dumps({})
 
-        selected_rounds = random.sample(range(1, totalRounds + 1), C.NUM_ROUNDS_FOR_PAYMENT)
-        self.session.vars['selected_rounds'] = selected_rounds
 
     def group_fixed(self):
         players = self.get_players()
@@ -292,6 +294,7 @@ class MyPage(Page):
         if 'button_clicked' in data:
             return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
+
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
         player.custom_round_num += 1
@@ -326,16 +329,14 @@ class FinalPage(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
-        selected_rounds = player.session.vars.get('selected_rounds', [])
-        if not selected_rounds:
-            raise RuntimeError("selected_rounds not found in session variables")  # Ensure it is set
-
         round_payoffs = json.loads(player.round_payoffs)
-        total_payment = sum(round_payoffs.get(str(round_num), {}).get('currency', 0) for round_num in selected_rounds)
+        payment_details = {round_num: round_payoffs.get(str(round_num), {}).get('currency', 0) for round_num in
+                           rounds_payment}
 
         return {
-            'selected_rounds': selected_rounds,
-            'total_payment': total_payment
+            'payment_rounds': rounds_payment,
+            'payment_details': payment_details,
+            'total_payment': sum(payment_details.values())
         }
 
 
