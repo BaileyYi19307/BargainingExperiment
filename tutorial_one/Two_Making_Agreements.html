@@ -98,9 +98,9 @@ of these instructions.</li>
 
 <script>
 window.buttonStates = {};
-window.selectedButton = null; // track the currently selected button for "Your Screen"
-window.selectedButtonA = null; // track the currently selected button for "Participant A's Screen"
-window.selectedButtonB = null; // track the currently selected button for "Participant B's Screen"
+window.selectedButton = null; 
+window.selectedButtonA = null;
+window.selectedButtonB = null; 
 
 document.addEventListener('DOMContentLoaded', function() {
     const configurations = [
@@ -219,7 +219,7 @@ function formatCoordinate(value) {
     if (Math.floor(value) !== value) {
         return value.toFixed(1); 
     }
-    return value; // Returns the value as is if it's an integer
+    return value; 
 }
 
 function liveRecv(data) {
