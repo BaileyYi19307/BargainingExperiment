@@ -9,13 +9,15 @@
     <li><strong>Exercises:</strong>
         <ul>
             <li>Watch the top line of the screen and see how the exchange rate of points to euros decreases.</li>
-            <li><input type="checkbox" class="exercise-checkbox">Click the blue circle and see how the “Time until agreement” starts counting down until zero, when the round will “end” and the number of points you receive is determined. <strong>Then click “Play another tutorial round” and repeat with the orange circle and click “Play another tutorial round” again.</strong></li>
-            <li><input type="checkbox" class="exercise-checkbox">Now try clicking on the blue circle then clicking on an empty circle or outside the triangle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then disappears when you click elsewhere.</li>
-            <li><input type="checkbox" class="exercise-checkbox">Now try clicking on the blue circle then clicking on the orange circle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then starts again at 10 seconds when you click on the second circle.</li>
+            <li id="task1"><input type="checkbox" class="exercise-checkbox" id="checkbox1">Click the blue circle and see how the “Time until agreement” starts counting down until zero, when the round will “end” and the number of points you receive is determined.</li>
+            <li id="task2"><input type="checkbox" class="exercise-checkbox" id="checkbox2">Then click “Play another tutorial round” and repeat with the orange circle and click “Play another tutorial round” again.</li>
+            <li id="task3"><input type="checkbox" class="exercise-checkbox" id="checkbox3">Now try clicking on the blue circle then clicking on an empty circle or outside the triangle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then disappears when you click elsewhere.</li>
+            <li id="task4"><input type="checkbox" class="exercise-checkbox" id="checkbox4">Now try clicking on the blue circle then clicking on the orange circle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then starts again at 10 seconds when you click on the second circle.</li>
             <li>You can now experiment with the tutorial screen as much as you like.</li>
         </ul>
     </li>
 </ul>
+
 
 <p>When another participant in your group clicks on a circle on their screen, it will be marked on your screen in the color corresponding to that participant: orange for “Participant A”, blue for “Participant B”</p>
 <div class="header-container">
@@ -58,12 +60,41 @@
 <br><br><br>
 <p><strong>When you have understood how the interactions work, click on “Finish tutorial” button. When all participants have finished the tutorial, the real interactions will begin.</strong></p>
 <br><br>
-<button type="submit" id="finish-tutorial-btn"><h1>Finish Tutorial</h1></button>
+<button type="submit" id="finish-tutorial-btn" disabled><h1>Finish Tutorial</h1></button>
 
 <script>
+
+
+    function getMeTaskList(){
+        liveSend({'getMeTaskList':'please'});
+    }
+
+    function check(x) {
+        var element = document.getElementById('checkbox' + x);
+        if (element) {
+            element.checked = true;
+        } else {
+            console.error("Element with id 'task" + x + "' not found.");
+        }
+
+        
+        var taskElement = document.getElementById('task' + x);
+        if (taskElement) {
+            taskElement.style.textDecoration = 'line-through';
+        } else {
+            console.error("Element with id 'task" + x + "' not found.");
+        }
+
+
+    }
+
+
     document.getElementById("repeat-tutorial-btn").addEventListener("click", function() {
-        location.reload();  // Refresh the page to simulate repeating the tutorial
+        location.reload(); 
+
     });
+
+
 
     let count=0;
 
@@ -90,6 +121,8 @@
         positionCornerLabels();
         startDecay();
         setupExerciseChecklist();
+        getMeTaskList();
+        
 
     });
 
@@ -99,6 +132,56 @@
     function makeBot2Choose(){
         liveSend("player2bot");
     }
+
+
+    // If the user clicks outside of the triangle
+//     document.addEventListener('click', function(event) {
+//     const triangleContainer = document.getElementById('triangleContainer');
+//     const repeatTutorialButton = document.getElementById('repeat-tutorial-btn');
+//     console.log("HELLO");
+//     if (event.target.innerText !== 'Play Another Tutorial Round' && event.target.id !==window.redbot) {
+//         console.log("Inside first if bracket");
+//         if (lastClickedButton[lastClickedButton.length-1] === window.bluebot) {
+//                 console.log("Inside second if bracket");
+//                 console.log("Previous button was blue. Agreement timer stopped.");
+//                 check(3);
+//                 liveSend({buttonClicked:true, whichTask:3});
+//         }
+//         deselectAllButtons();
+//         stopAgreementTimer();
+//     }
+// });
+
+// if the user clicks outside of the triangle
+document.addEventListener('click', function(event) {
+    const triangleContainer = document.getElementById('triangleContainer');
+    const repeatTutorialButton = document.getElementById('repeat-tutorial-btn');
+    const allButtons = document.querySelectorAll('.button');
+
+    // check if the click is outside the triangle container and not on any button
+    const clickedOutsideTriangle = !triangleContainer.contains(event.target);
+    const clickedButton = Array.from(allButtons).some(button => button.contains(event.target));
+
+    if (clickedOutsideTriangle && event.target.innerText !== 'Play Another Tutorial Round' && !clickedButton) {
+        console.log("Inside first if bracket");
+        if (lastClickedButton[lastClickedButton.length - 1] === window.bluebot) {
+            console.log("Inside second if bracket");
+            console.log("Previous button was blue. Agreement timer stopped.");
+            check(3);
+            liveSend({ buttonClicked: true, whichTask: 3 });
+        }
+        deselectAllButtons();
+        stopAgreementTimer();
+    }
+});
+
+function deselectAllButtons() {
+    Object.keys(window.buttonStates).forEach(buttonId => {
+        window.buttonStates[buttonId].clickedByUser1 = false;
+        updateButtonAppearance(document.getElementById(buttonId), window.buttonStates[buttonId]);
+    });
+    agreementButtonID = null;
+}
 
 
     function setupExerciseChecklist() {
@@ -112,7 +195,6 @@
         });
     });
 
-    // Initial check in case some checkboxes are already checked (unlikely, but just in case)
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     finishButton.disabled = !allChecked;
 }
@@ -158,9 +240,9 @@
                 const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
 
                 const buttonId = `btn${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
-                window.buttonStates[buttonId] = []; // Initialize as an empty array
+                window.buttonStates[buttonId] = [];
                 const button = document.createElement('button');
-                button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`; // Store coordinates in data attribute
+                button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`;
                 button.id = buttonId;
                 button.className = 'button';
                 button.type = 'button';
@@ -168,6 +250,7 @@
 
                 button.addEventListener('click', function(e) {
                     handleButtonClick(e.target.id);
+                    lastClickedButton.push(e.target.id);
                 });
 
                 button.addEventListener('mouseenter', function(e) {
@@ -210,12 +293,48 @@
     }
 
     function handleButtonClick(buttonId) {
-        console.log(buttonId);
         liveSend({
             button_clicked: true, button_id:buttonId});
     }
 
+
+    function checkCompleted(taskList){
+        for (let key in taskList){
+            check(key);
+        }
+    }
+
+    window.bluebot;
+    window.redbot;
+
     function liveRecv(data) {
+
+        if ('allTasksCompleted' in data){
+            // all tasks have been completed, toggle the finish button on
+            document.getElementById('finish-tutorial-btn').disabled = false;
+        }
+        if ('taskList' in data){
+            console.log(data['taskList']);
+            checkCompleted(data['taskList']);
+            if (data['alreadyFinished']== true){
+                checkCompleted(data['tasksDone'])
+                document.getElementById('finish-tutorial-btn').disabled = false;
+            }
+        }
+
+
+        if (data['player_id']===2){
+                window.redbot=data['button_id'];
+                console.log(window.redbot);
+            }
+        if ('player_id' in data){
+            if (data['player_id']===3){
+                window.bluebot=data['button_id'];
+                console.log(window.bluebot);
+            }
+
+        }   
+
         var button = document.getElementById(data.button_id);
         var btnState = buttonStates[data.button_id];
 
@@ -277,24 +396,57 @@
         prevButtonStates[buttonID] = { ...window.buttonStates[buttonID] };
     }
 
-    function startAgreementTimer() {
-        const agreementDisplay = document.getElementById('agreement-timer');
-        let seconds = config.ratificationTime;
+    // function startAgreementTimer() {
+    //     const agreementDisplay = document.getElementById('agreement-timer');
+    //     let seconds = config.ratificationTime;
 
-        window.agreementTimer = setInterval(() => {
-            seconds--;
-            agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
-            if (seconds === 0) {
-                clearInterval(window.agreementTimer);
-                displayResults();
-            }
-        }, 1000);
+    //     window.agreementTimer = setInterval(() => {
+    //         seconds--;
+    //         agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
+    //         if (seconds === 0) {
+    //             clearInterval(window.agreementTimer);
+    //             displayResults();
+    //         }
+    //     }, 1000);
 
-    }
+    // }
+
+//     function startAgreementTimer() {
+//     const agreementDisplay = document.getElementById('agreement-timer');
+//     let seconds = config.ratificationTime;
+
+//     // Set initial display immediately
+//     agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
+
+//     window.agreementTimer = setInterval(() => {
+//         seconds--;
+//         agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
+//         if (seconds === 0) {
+//             clearInterval(window.agreementTimer);
+//             displayResults();
+//         }
+//     }, 1000);
+// }
+
+function startAgreementTimer() {
+    const agreementDisplay = document.getElementById('agreement-timer');
+    let seconds = config.ratificationTime;
+    agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
+
+    window.agreementTimer = setInterval(() => {
+        seconds--;
+        agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
+        if (seconds === 0) {
+            clearInterval(window.agreementTimer);
+            displayResults();
+        }
+    }, 1000);
+}
+
+
 
     
     function displayResultsEnd() {
-        // Hide the parent container and participant labels
         document.getElementById('triangleContainer').style.display = 'none';
         document.getElementById('participant2Label').style.display = 'none';
         document.getElementById('participant3Label').style.display = 'none';
@@ -302,17 +454,26 @@
         document.getElementById('agreement-timer').style.display='none';
         document.getElementById('currency').style.display='none';
 
-        // Display the results box
+        // display the results box
         document.getElementById('results-box').style.display = 'block';
 
         document.getElementById('result-payoff').textContent = 0;
-        // Update the results with player data
+        // update the results with player data
         document.getElementById('result-ogCurrency').textContent = 0.00;
         document.getElementById('result-currency').textContent = 0.00;
     }
 
 
     function displayResults() {
+        if (lastClickedButton[lastClickedButton.length-1] === window.bluebot){
+            check(1);
+            liveSend({buttonClicked:true,whichTask:1});
+        }
+        if (lastClickedButton[lastClickedButton.length-1] === window.redbot){
+            check(2);
+            liveSend({buttonClicked:true,whichTask:2});
+        }
+
         document.getElementById('triangleContainer').style.display = 'none';
         document.getElementById('participant2Label').style.display = 'none';
         document.getElementById('participant3Label').style.display = 'none';
@@ -330,11 +491,46 @@
         document.getElementById('result-currency').textContent = (p1Value * currentDecay).toFixed(2);
     }
 
-    function stopAgreementTimer() {
+    // function stopAgreementTimer() {
+    //     clearInterval(window.agreementTimer);
+    //     //if we were clicking blue
+    //     //if we were clicking red
+    //     window.agreementTimer = null;
+    //     document.getElementById('agreement-timer').textContent = 'Time to Agreement:';
+    // }
+    const lastClickedButton = [];
+
+function stopAgreementTimer() {
         clearInterval(window.agreementTimer);
+        console.log(lastClickedButton);
+        
+
+        if (lastClickedButton.length != 0) {
+            console.log("HELLO I made it here");
+            if (lastClickedButton[lastClickedButton.length-2] === window.bluebot) {
+                console.log("Previous button was blue. Agreement timer stopped.");
+                const repeatTutorialButton = document.getElementById('repeat-tutorial-btn');
+            if (event.target.innerText !== 'Play Another Tutorial Round') {
+                    check(3);
+                    liveSend({buttonClicked:true, whichTask:3});
+                    if (lastClickedButton[lastClickedButton.length-1] === window.redbot){
+                        check(4);
+                        liveSend({buttonClicked:true, whichTask:4});
+                    }
+                }
+            } else if (lastClickedButton[0] === window.redbot) {
+                console.log("Previous button was red. Agreement timer stopped.");
+            }
+            else{
+                console.log("Neither blue nor red was last button");
+            }
+        }
+
+
         window.agreementTimer = null;
         document.getElementById('agreement-timer').textContent = 'Time to Agreement:';
     }
+
 
     function updateButtonAppearance(button, btnState) {
         button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
@@ -454,6 +650,11 @@
 </script>
 
 <style>
+
+    .exercise-checkbox {
+        visibility: hidden;
+    }
+
     #triangleContainer {
         display: inline-block;
         margin-top: 50px;
