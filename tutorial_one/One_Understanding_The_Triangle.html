@@ -1,11 +1,10 @@
-{{ block title }}
+{% block title %}
 TUTORIAL STAGE 1
-{{ endblock }}
+{% endblock %}
 
-{{ block content }}
+{% block content %}
 
-<br>
-<div class="para">
+<div class="instructions">
     <p><strong>Read the instructions below and complete ALL the listed exercises.</strong></p>
     <p><strong>Note:</strong> you will not be able to finish the tutorial if you do not complete ALL the listed exercises.</p>
     <p><strong>DO NOT click “Move to stage 2” until you are specifically asked to do so.</strong></p>
@@ -14,26 +13,27 @@ TUTORIAL STAGE 1
     <ul>
         <li>The participants in your group must decide how to divide <strong>12 points</strong> amongst yourselves.</li>
         <li>On your screen, you will see small circles arranged in the form of a large triangle. Each circle represents a different way of allocating the points amongst you and the other two participants you are interacting with in a given round.</li>
-        <li>The corners of the triangle are labeled <strong>“You”, “Participant A”, and “Participant B”</strong>.</li>
+        <li>The corners of the triangle are labeled <strong style="color: orange;">Participant A</strong>, <strong style="color: blue;">Participant B</strong>, and <strong style="color: green;">You</strong>.</li>
         <li>The circles in the corners of the triangle correspond to allocations in which the indicated corner participant receives all available points, while the others receive no points.</li>
         <li><strong>The closer a circle is to a given corner, the more points the corresponding allocation assigns to that participant.</strong></li>
         <li>If you move your mouse over a circle, the corresponding points to be allocated to each participant are <strong>displayed in the appropriate corners of the triangle</strong>.</li>
     </ul>
     <h4>EXERCISES:</h4>
     <ul>
-        <li> Move your mouse around the triangle until you understand how the circles are arranged.</li>
-        <li><input type="checkbox" class="exercise-checkbox"> Click on a circle to select it. Notice that the selected circle is marked in green.</li>
-        <li><input type="checkbox" class="exercise-checkbox"> Click outside the triangle. The green circle should disappear.</li>
-        <li> During the real interactions, when you click on a circle, this will be shown on the screens of the two other participants you are interacting with, and it will disappear from their screens if you click outside the triangle. If two or more participants select the same circle continuously for 10 seconds, the points are allocated accordingly in that round.</li>
+        <li id="task1"><input type="checkbox" class="exercise-checkbox" id="checkbox1"> Move your mouse around the triangle until you understand how the circles are arranged. Click on a circle to select it. Notice that the selected circle is marked in green.</li>
+        <li id="task2"><input type="checkbox" class="exercise-checkbox" id="checkbox2"> Click outside the triangle. The green circle should disappear.</li>
+        <li>During the real interactions, when you click on a circle, this will be shown on the screens of the two other participants you are interacting with, and it will disappear from their screens if you click outside the triangle. If two or more participants select the same circle continuously for 10 seconds, the points are allocated accordingly in that round.</li>
     </ul>
 </div>
+
+<p>When another participant in your group clicks on a circle on their screen, it will be marked on your screen in the color corresponding to that participant: orange for <strong style="color:orange">Participant A</strong>, blue for <strong style="color:blue">Participant B</strong>, and green for <strong style="color:green">You</strong>.</p>
+
 <div class="header-container">
     <div class="values-container">
-        
         <div id="player-values">
-            P1: <span id="p1-value">__</span>
-            P2: <span id="p2-value">__</span>
-            P3: <span id="p3-value">__</span>
+            <span id="p1-value"></span>
+            <span id="p2-value"></span>
+            <span id="p3-value"></span>
         </div>
         <div id="hover-values">
             <span id="hover-p1-value">Participant A</span>
@@ -43,6 +43,14 @@ TUTORIAL STAGE 1
     </div>
 </div>
 
+<div id="results-box" style="display:none;">
+    <div class="content-container">
+        <p class="results-info">You get: <span class="highlight" id="result-payoff"></span></p>
+        <p class="results-info">Original Euros Earned: <span class="highlight" id="result-ogCurrency"></span></p>
+        <p class="results-info">Final Euros Earned (after decay): <span class="highlight" id="result-currency"></span></p>
+        <button type="button" id="repeat-tutorial-btn" class="next-button"><h1>Play Another Tutorial Round</h1></button>
+    </div>
+</div>
 
 <div class="parent-container">
     <div id="triangleContainer"></div>
@@ -51,11 +59,9 @@ TUTORIAL STAGE 1
     <div class="corner-label bottom" id="youLabel">You</div>
 </div>
 
-<br>
-<br>
-<br>
-<p><strong>When you have completed the exercises, click on “Move to stage 2” button. When all participants have finished the tutorial, the real interactions will begin.</strong></p>
-<br>
+<br><br><br>
+<p><strong>When you have understood how the interactions work, click on “Finish tutorial” button. When all participants have finished the tutorial, the real interactions will begin.</strong></p>
+<br><br>
 <button type="button" id="move-to-stage2-btn" disabled><h1>Move to Stage 2</h1></button>
 
 <script>
@@ -63,43 +69,152 @@ TUTORIAL STAGE 1
         document.querySelector('form').submit();
     });
 
-    const checkboxes = document.querySelectorAll('.exercise-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            document.getElementById('move-to-stage2-btn').disabled = !allChecked;
-        });
+    let firstButtonClick = false;
+    let firstDeselection = false;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var totalNodes = 12; // define total num of circles
+        var totalPoints = 15; // define total num of points to distribute
+        generateTriangle(totalNodes, totalPoints);
+        makeBot1Choose();
+        makeBot2Choose();
+        positionCornerLabels();
+        getTaskList();
+        setupExerciseChecklist();
     });
 
-    let count = 0;
+    function getTaskList() {
+        liveSend({'getTaskList':'hi'});
+    }
+
+    function liveRecv(data) {
+        if ('allTasksCompleted' in data) {
+            document.getElementById('move-to-stage2-btn').disabled = false;
+        }
+        if ('howManyCompleted' in data) {
+            checkCompleted(data['howManyCompleted']);
+        }
+    }
+
+    function check(x) {
+        var element = document.getElementById('checkbox' + x);
+        if (element) {
+            element.checked = true;
+        } else {
+            console.error("Element with id 'task" + x + "' not found.");
+        }
+        var taskElement = document.getElementById('task' + x);
+        if (taskElement) {
+            taskElement.style.textDecoration = 'line-through';
+        } else {
+            console.error("Element with id 'task" + x + "' not found.");
+        }
+    }
+
+    document.getElementById("repeat-tutorial-btn").addEventListener("click", function() {
+        location.reload(); 
+    });
+
     var config = {
         totalRows: 6,
         totalPoints: 15,
         timeToAgreement: 150,
         ratificationTime: 3
     }
-    window.buttonStates = {};  // Ensure this is empty before populating
+    window.buttonStates = {};
 
-    var borderColors = {
-        red: false,
-        blue: false,
-        green: false
-    };
+    function setupExerciseChecklist() {
+        const checkboxes = document.querySelectorAll('.exercise-checkbox');
+        const finishButton = document.getElementById('move-to-stage2-btn');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                finishButton.disabled = !allChecked;
+            });
+        });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        var totalNodes = 12; // define total num of circles
-        var totalPoints = 15; // define total num of points to distribute
-        generateTriangle(totalNodes, totalPoints);
-        positionCornerLabels();
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        finishButton.disabled = !allChecked;
+    }
+
+    function makeBot1Choose() {
+        liveSend("player1bot");
+    }
+    function makeBot2Choose() {
+        liveSend("player2bot");
+    }
+
+    document.addEventListener('click', function(event) {
+        const triangleContainer = document.getElementById('triangleContainer');
+        if (!triangleContainer.contains(event.target)) {
+            if (firstButtonClick) {
+                check(2);
+                liveSend({buttonClicked: true, whichTask: 2});
+            }
+            deselectAllButtons();
+        }
     });
 
-    // generate a triangle of n nodes, among which points are divided equally
+    function deselectAllButtons() {
+        if (!firstDeselection && firstButtonClick) {
+            firstDeselection = true;
+        }
+        Object.keys(window.buttonStates).forEach(buttonId => {
+            window.buttonStates[buttonId].clickedByUser1 = false;
+            updateButtonAppearance(document.getElementById(buttonId), window.buttonStates[buttonId]);
+        });
+        agreementButtonID = null;
+    }
+
+    function handleButtonClick(buttonId) {
+        const buttonState = window.buttonStates[buttonId];
+        if (buttonState.clickedByUser1) {
+            buttonState.clickedByUser1 = false;
+            updateButtonAppearance(document.getElementById(buttonId), buttonState);
+            stopAgreementTimer();
+            agreementButtonID = null;
+        } else {
+            if (!firstButtonClick) {
+                check(1);
+                liveSend({buttonClicked: true, whichTask: 1});
+                firstButtonClick = true;
+            }
+            deselectAllButtons();
+            buttonState.clickedByUser1 = true;
+            updateButtonAppearance(document.getElementById(buttonId), buttonState);
+            if (Object.values(buttonState).filter(Boolean).length >= 2 && agreementButtonID === null) {
+                startAgreementTimer();
+                agreementButtonID = buttonId;
+            }
+        }
+        liveSend({button_clicked: true, button_id: buttonId});
+    }
+
+    function checkCompleted(taskList) {
+        for (let key in taskList) {
+            check(key);
+        }
+    }
+
+    function startDecay() {
+        var currentValue = 3.00;
+        var display = document.getElementById('euValue');
+        liveSend({'timerStarted': Date.now()});
+        var decayInterval = setInterval(function() {
+            if (currentValue <= 0) {
+                displayResultsEnd();
+            } else {
+                currentValue -= 0.02;
+                display.textContent = currentValue.toFixed(2);
+            }
+        }, 1000);
+    }
+
     function generateTriangle(n, points) {
         const container = document.getElementById('triangleContainer');
         const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
-
         var bottomP = 0;
-
         const mappings = {
             1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}),
             2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}),
@@ -112,17 +227,15 @@ TUTORIAL STAGE 1
             var leftP = rowNum - 1;
             var rightP = 0;
             const scalingFactor = points / (numRows - 1);
-
             for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
                 const {bottomP: rawBottomP, leftP: rawLeftP, rightP: rawRightP} = mappings[window.playerId](bottomP, leftP, rightP);
                 const scaledBottomP = formatCoordinate(rawBottomP * scalingFactor);
                 const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
                 const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
-
                 const buttonId = `btn${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
-                window.buttonStates[buttonId] = []; // Initialize as an empty array
+                window.buttonStates[buttonId] = [];
                 const button = document.createElement('button');
-                button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`; // Store coordinates in data attribute
+                button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`;
                 button.id = buttonId;
                 button.className = 'button';
                 button.type = 'button';
@@ -136,10 +249,9 @@ TUTORIAL STAGE 1
                     var hoverValues = e.target.dataset.coords.split(',').map(function(coord) {
                         return coord.trim().replace(/[()]/g, '');
                     });
-                    var mappedValues = mapValuesBasedOnPlayer(hoverValues, window.playerId);
-                    showAndPositionHoverValue('hover-p1-value', mappedValues[0], 'topLeft');
-                    showAndPositionHoverValue('hover-p2-value', mappedValues[1], 'topRight');
-                    showAndPositionHoverValue('hover-p3-value', mappedValues[2], 'bottom');
+                    showAndPositionHoverValue('hover-p1-value', hoverValues[0], 'bottom');
+                    showAndPositionHoverValue('hover-p2-value', hoverValues[1], 'topLeft');
+                    showAndPositionHoverValue('hover-p3-value', hoverValues[2], 'topRight');
                 });
 
                 button.addEventListener('mouseleave', function(e) {
@@ -147,12 +259,6 @@ TUTORIAL STAGE 1
                     hideHoverValue('hover-p2-value');
                     hideHoverValue('hover-p3-value');
                 });
-
-                function hideHoverValue(id) {
-                    var valueSpan = document.getElementById(id);
-                    valueSpan.style.display = 'none';
-                }
-                window.buttonStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
 
                 leftP--;
                 rightP++;
@@ -166,157 +272,18 @@ TUTORIAL STAGE 1
 
     function formatCoordinate(value) {
         if (Math.floor(value) !== value) {
-            return value.toFixed(1); // Rounds to one decimal point if not an integer
+            return value.toFixed(1);
         }
-        return value; // Returns the value as is if it's an integer
-    }
-
-    function handleButtonClick(buttonId) {
-        liveSend({
-            button_clicked: true, button_id: buttonId, participants: {{player.id_in_group}}
-        });
-    }
-
-    function liveRecv(data) {
-        var button = document.getElementById(data.button_id);
-        var btnState = buttonStates[data.button_id];
-
-        if (data.player_id === 1) {
-            btnState.clickedByUser1 = !btnState.clickedByUser1;
-        } else if (data.player_id === 2) {
-            btnState.clickedByUser2 = !btnState.clickedByUser2;
-        } else if (data.player_id === 3) {
-            btnState.clickedByUser3 = !btnState.clickedByUser3;
-        }
-
-        Object.keys(buttonStates).forEach(function(otherButtonId) {
-            if (otherButtonId !== data.button_id) {
-                var otherBtnsState = buttonStates[otherButtonId];
-                if (data.player_id === 1) {
-                    otherBtnsState.clickedByUser1 = false;
-                } else if (data.player_id === 2) {
-                    otherBtnsState.clickedByUser2 = false;
-                } else if (data.player_id === 3) {
-                    otherBtnsState.clickedByUser3 = false;
-                }
-                updateButtonAppearance(document.getElementById(otherButtonId), otherBtnsState);
-            }
-        });
-
-        updateButtonAppearance(button, btnState);
-        update(button.id);
-
-        if (data.player_id === window.playerId) {
-            setPlayerValues(data.button_id);
-        }
-        updatePayoffs();
-    }
-
-    let agreementButtonID = null;  // ID of the button currently in agreement
-    let prevButtonStates = {};  // stores previous states for all buttons
-
-    function update(buttonID) {
-        const currentSum = Object.values(window.buttonStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
-        const activeParticipants = Object.entries(window.buttonStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
-
-        if (agreementButtonID !== null) {
-            const agreementCurrentSum = Object.values(window.buttonStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
-            if (agreementCurrentSum < 2) {
-                console.log(`Agreement broken on button ${agreementButtonID}`);
-                agreementButtonID = null;  // Clear the agreement state
-            }
-        }
-
-        liveSend({ numInAgreement: currentSum, activeParticipants: activeParticipants });
-
-        if (currentSum >= 2 && agreementButtonID === null) {
-            agreementButtonID = buttonID;
-            console.log(`Agreement started on button ${buttonID}`);
-        }
-
-        prevButtonStates[buttonID] = { ...window.buttonStates[buttonID] };
-    }
-
-
-    function updateButtonAppearance(button, btnState) {
-        button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
-
-        var playerColor = {
-            1: {1: 'green', 2: 'red', 3: 'blue'},
-            2: {1: 'blue', 2: 'green', 3: 'red'},
-            3: {1: 'red', 2: 'blue', 3: 'green'}
-        };
-
-        function getColorBorderClass(playerNum) {
-            return playerColor[window.playerId][playerNum] + '-border';
-        }
-
-        function getCombinedColorClass(playerNum1, playerNum2) {
-            var colors = [playerColor[window.playerId][playerNum1], playerColor[window.playerId][playerNum2]].sort();
-            return colors.join('-');
-        }
-
-        var activePlayers = [];
-        if (btnState.clickedByUser1) activePlayers.push(1);
-        if (btnState.clickedByUser2) activePlayers.push(2);
-        if (btnState.clickedByUser3) activePlayers.push(3);
-
-        if (activePlayers.length === 3) { //everyone's clicking on this button
-            button.classList.add('all-borders');
-        } else if (activePlayers.length === 2) { //two players are clicking on this button
-            button.classList.add(getCombinedColorClass(activePlayers[0], activePlayers[1]));
-        } else if (activePlayers.length === 1) { //one player is clicking on this button
-            button.classList.add(getColorBorderClass(activePlayers[0]));
-        }
-    }
-
-    function updatePayoffs() {
-        const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
-        const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
-        const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
-
-        const currencyDecay = parseFloat(document.getElementById('euValue').textContent);
-        var time = new Date();
-
-        liveSend({
-            payoffs: {
-                1: payoff1,
-                2: payoff2,
-                3: payoff3,
-                4: currencyDecay,
-                5: window.playerId,
-                7: time.toISOString(),
-                8: Date.now()
-            }
-        });
-    }
-
-    function setPlayerValues(buttonId) {
-        var values = buttonId.replace('btn', '').split('_').map(Number);
-
-        document.getElementById('p1-value').textContent = values[0];
-        document.getElementById('p2-value').textContent = values[1];
-        document.getElementById('p3-value').textContent = values[2];
-    }
-
-    function mapValuesBasedOnPlayer(values, playerId) {
-        switch(playerId) {
-            case 1: return [values[1], values[2], values[0]];
-            case 2: return [values[2], values[0], values[1]];
-            case 3: return [values[0], values[1], values[2]];
-            default: return [values[1], values[2], values[0]];
-        }
+        return value;
     }
 
     function showAndPositionHoverValue(id, value, position) {
         var valueSpan = document.getElementById(id);
         valueSpan.textContent = value;
         valueSpan.style.display = 'block';
-
         var containerRect = document.getElementById('triangleContainer').getBoundingClientRect();
         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
         if (position === 'topLeft') {
             valueSpan.style.left = (containerRect.left + scrollLeft - 25) + 'px';
             valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
@@ -329,6 +296,11 @@ TUTORIAL STAGE 1
         }
     }
 
+    function hideHoverValue(id) {
+        var valueSpan = document.getElementById(id);
+        valueSpan.style.display = 'none';
+    }
+
     function positionCornerLabels() {
         var triangleContainer = document.getElementById('triangleContainer');
         var triangleRect = triangleContainer.getBoundingClientRect();
@@ -337,63 +309,86 @@ TUTORIAL STAGE 1
         var youLabel = document.getElementById('youLabel');
         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
         participant2Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
         participant2Label.style.left = (triangleRect.left + scrollLeft - 65) + 'px';
-
         participant3Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
         participant3Label.style.left = (triangleRect.right + scrollLeft - 30) + 'px';
-
         youLabel.style.top = (triangleRect.bottom + scrollTop + 25) + 'px';
         youLabel.style.left = (triangleRect.left + scrollLeft + (triangleRect.width - youLabel.offsetWidth) / 2) + 'px';
+    }
+
+    function updateButtonAppearance(button, btnState) {
+        button.classList.remove('green-border');
+        if (btnState.clickedByUser1) {
+            button.classList.add('green-border');
+        }
     }
 
     window.playerId = {{ player.id_in_group }};
 </script>
 
 <style>
-    #triangleContainer {
-        display: inline-block;
-        margin-top: 50px;
+    .exercise-checkbox {
+        display: none;
     }
+
+    
+    .instructions {
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        color: #333;
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        max-width: 800px;
+        margin: auto;
+        margin-bottom: 20px;
+    }
+
+    .instructions p {
+        margin-bottom: 15px;
+    }
+
+    .instructions h4 {
+        margin-top: 20px;
+    }
+
+    .instructions ul {
+        padding-left: 20px;
+    }
+
     .header-container {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
     }
-    .values-container, .timers-container {
+
+    .values-container {
         display: flex;
         align-items: center;
         justify-content: center;
         width: 100%;
     }
+
     #hover-p1-value, #hover-p2-value, #hover-p3-value {
         position: absolute;
         display: none;
     }
-    #timer, #agreement-timer {
-        flex-basis: 50%;
-        text-align: center;
-        margin: 0;
-        padding: 0;
-        font-size: 20px;
+
+    #triangleContainer {
+        display: inline-block;
+        margin-top: 50px;
     }
-    .currency-decay {
-        height: 30px;
-        width: 200px;
-        border: 1px solid green;
-        text-align: center;
-    }
-    #player-values {
-        display: none;
-        margin-bottom: 30px;
-    }
+
     .triangle-row {
         display: flex;
         justify-content: center;
         align-items: center;
     }
+
     .button {
         width: 30px;
         height: 30px;
@@ -406,66 +401,81 @@ TUTORIAL STAGE 1
         position: relative;
         overflow: hidden;
     }
+
     .button:hover {
         background-color: rgba(0, 0, 0, 0.5);
     }
-    .red-border {
-        border: 2px solid red;
-    }
-    .blue-border {
-        border: 2px solid blue;
-    }
+
     .green-border {
         border: 2px solid green;
     }
-    .red-blue {
-        border: none;
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
+
+    .corner-label {
+        position: absolute;
+        font-size: 16px;
+        white-space: nowrap;
     }
-    .red-green {
-        border: none;
-        box-shadow: 0 0 0 2px red, 0 0 0 4px green;
-    }
-    .green-blue {
-        border: none;
-        box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
-    }
-    .blue-red {
-        border: none;
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
-    }
-    .green-red {
-        border: none;
-        box-shadow: 0 0 0 2px red, 0 0 0 4px green;
-    }
-    .blue-green {
-        border: none;
-        box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
-    }
-    .all-borders {
-        border: none;
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green;
-    }
-    .red-fill {
-        background-color: red;
-    }
-    .layers {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-content: center;
-    }
+
     .parent-container {
         display: flex;
         align-content: center;
         justify-content: center;
         min-width: 500px;
     }
-    .corner-label {
-        position: absolute;
+
+    .content-container {
+        text-align: center;
+        padding: 20px;
+        background-color: #f7f7f7;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        margin: auto;
+        max-width: 500px;
+    }
+
+    .results-info {
+        font-size: 18px;
+        margin: 10px 0;
+    }
+
+    .highlight {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .next-button {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
         font-size: 16px;
-        white-space: nowrap;
+        margin: 20px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+    }
+
+    .next-button:hover {
+        background-color: #45a049;
+    }
+
+    #participant2Label {
+        font-weight: bold;
+        color: orange;
+    }
+
+    #participant3Label {
+        font-weight: bold;
+        color: blue;
+    }
+
+    #youLabel {
+        font-weight: bold;
+        color: green;
     }
 </style>
 
-{{ endblock }}
+{% endblock %}
