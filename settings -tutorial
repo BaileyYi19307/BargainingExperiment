@@ -14,7 +14,7 @@ SESSION_CONFIG_DEFAULTS = dict(
 )
 
 PARTICIPANT_FIELDS = []
-SESSION_FIELDS = ['who_in_agreement', 'numAgree', 'beginningTime', 'previd']
+SESSION_FIELDS = ['who_in_agreement', 'numAgree', 'beginningTime', 'previd', 'taskList', 'howManyCompleted', 'finishedAlready']
 
 LANGUAGE_CODE = 'en'
 REAL_WORLD_CURRENCY_CODE = 'USD'
