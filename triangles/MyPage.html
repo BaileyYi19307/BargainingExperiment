@@ -34,9 +34,22 @@
 
 <div class="parent-container">
     <div id="triangleContainer"></div>
-    <div class="corner-label top-left" id="participant2Label">Participant A</div>
-    <div class="corner-label top-right" id="participant3Label">Participant B</div>
-    <div class="corner-label bottom" id="youLabel">You</div>
+    <div class="corner-label top-left" id="participant2Label">Participant A
+
+        <div class="icon1"> 
+            <img src="{{ static 'images/female_icon2.png' }}" width="25" height="35"/>
+        </div>
+    </div>
+    <div class="corner-label top-right" id="participant3Label">Participant B
+        <div class="icon2">        
+            <img src="{{ static 'images/female_icon2.png' }}" width="25" height="35"/>
+        </div>
+    </div>
+    <div class="corner-label bottom" id="youLabel">You
+        <div class="icon3">        
+            <img src="{{ static 'images/female_icon2.png' }}" width="25" height="35"/>
+        </div>
+    </div>
 </div>
 
 
@@ -459,6 +472,44 @@ function updatePayoffs() {
 
 <style>
 
+    #participant2Label {
+        font-weight: bold;
+        color: orange;
+    }
+
+    #participant3Label {
+        font-weight: bold;
+        color: blue;
+    }
+
+    #youLabel {
+        font-weight: bold;
+        color: green;
+    }
+
+    #participantLabel2{
+        position:absolute;
+    }
+
+    .icon1{
+        position:relative;
+        height:42px;
+        width:30px;
+    }
+
+    .icon2{
+        position:relative;
+        height:42px;
+        width:30px;
+        left:60px;
+    }
+
+    .icon3{
+        position:relative;
+        height:42px;
+        width:30px;
+
+    }
     #triangleContainer{
         display: inline-block;
         margin-top:50px;
@@ -481,6 +532,7 @@ function updatePayoffs() {
     position: absolute;
     display: none; /* Hide initially */
 }
+
 
     #timer, #agreement-timer {
         flex-basis: 50%; /* Divide the space equally between the two elements */
@@ -600,6 +652,10 @@ function updatePayoffs() {
         position: absolute;
         font-size: 16px;
         white-space:nowrap;
+    }
+
+    #participantALabel{
+        border: 1px solid black;
     }
 
 
