@@ -15,7 +15,7 @@ print(f"Selected payment rounds: {rounds_payment}")
 tmp = 0
 
 class C(BaseConstants):
-    NAME_IN_URL = 'triangles'
+    NAME_IN_URL = 'Main_Experiment'
     PLAYERS_PER_GROUP = None
     NUM_ROUNDS = 1          # number of cycles of the entire game
     NUM_ROUNDS_FOR_PAYMENT = 3
@@ -300,7 +300,7 @@ class QuestionnairePage(Page):
     ]
 
     def get_template_name(self):
-        return 'triangles/QuestionnairePage.html'
+        return 'Main_Experiment/QuestionnairePage.html'
 
 
 
