@@ -188,7 +188,7 @@ class Report(ExtraModel):
     Timestamp = models.StringField()
     Time_Since_Round_Start= models.FloatField()
 
-class MyPage(Page):
+class Main_Interface(Page):
     @staticmethod
     def live_method(player, data):
         session = player.session
@@ -281,14 +281,14 @@ class MyPage(Page):
     def before_next_page(player: Player, timeout_happened):
         player.custom_round_num += 1
 
-class ResultsPage(Page):
+class Round_Payoffs(Page):
     @staticmethod
     def live_method(player: Player, data: dict):
         if data.get('next_clicked'):
             return {player.id_in_group: 'next'}
 
 
-class QuestionnairePage(Page):
+class Questionnaire(Page):
     form_model = 'player'
     form_fields = [
         'noticed_icons', 'group_composition', 'preferences', 'acceptability_scale',
@@ -300,11 +300,11 @@ class QuestionnairePage(Page):
     ]
 
     def get_template_name(self):
-        return 'Main_Experiment/QuestionnairePage.html'
+        return 'Main_Experiment/Questionnaire.html'
 
 
 
-class FinalPage(Page):
+class Experiment_End(Page):
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
         player.custom_round_num = 1     # reset at the final page
@@ -322,7 +322,7 @@ class FinalPage(Page):
         }
 
 
-page_sequence = [WaitingRoom, MyPage, ResultsPage] * totalRounds + [QuestionnairePage, FinalPage]
+page_sequence = [WaitingRoom, Main_Interface, Round_Payoffs] * totalRounds + [Questionnaire, Experiment_End]
 
 print(f"Total pages: {len(page_sequence)}")
 for i, page in enumerate(page_sequence):
