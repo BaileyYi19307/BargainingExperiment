@@ -22,6 +22,8 @@ TUTORIAL STAGE 1
     <ul>
         <li id="task1"><input type="checkbox" class="exercise-checkbox" id="checkbox1"> Move your mouse around the triangle until you understand how the circles are arranged. Click on a circle to select it. Notice that the selected circle is marked in green.</li>
         <li id="task2"><input type="checkbox" class="exercise-checkbox" id="checkbox2"> Click outside the triangle. The green circle should disappear.</li>
+    </ul>
+    <ul>
         <li>During the real interactions, when you click on a circle, this will be shown on the screens of the two other participants you are interacting with, and it will disappear from their screens if you click outside the triangle. If two or more participants select the same circle continuously for 10 seconds, the points are allocated accordingly in that round.</li>
     </ul>
 </div>
@@ -64,7 +66,16 @@ TUTORIAL STAGE 1
 <br><br>
 <button type="button" id="move-to-stage2-btn" disabled><h1>Move to Stage 2</h1></button>
 
+
 <script>
+
+    var config = {
+        totalNodes: 12,              // Number of nodes in the triangle
+        totalPoints: 15,             // Total points to distribute
+    }
+    window.buttonClickStates = {};
+
+
     document.getElementById("move-to-stage2-btn").addEventListener("click", function() {
         document.querySelector('form').submit();
     });
@@ -73,9 +84,7 @@ TUTORIAL STAGE 1
     let firstDeselection = false;
 
     document.addEventListener('DOMContentLoaded', function() {
-        var totalNodes = 12; // define total num of circles
-        var totalPoints = 15; // define total num of points to distribute
-        generateTriangle(totalNodes, totalPoints);
+        generateTriangle(config.totalNodes, config.totalPoints);
         makeBot1Choose();
         makeBot2Choose();
         positionCornerLabels();
@@ -84,7 +93,7 @@ TUTORIAL STAGE 1
     });
 
     function getTaskList() {
-        liveSend({'getTaskList':'hi'});
+        liveSend({'getTaskList':''});
     }
 
     function liveRecv(data) {
@@ -115,13 +124,7 @@ TUTORIAL STAGE 1
         location.reload(); 
     });
 
-    var config = {
-        totalRows: 6,
-        totalPoints: 15,
-        timeToAgreement: 150,
-        ratificationTime: 3
-    }
-    window.buttonStates = {};
+
 
     function setupExerciseChecklist() {
         const checkboxes = document.querySelectorAll('.exercise-checkbox');
@@ -146,6 +149,9 @@ TUTORIAL STAGE 1
     }
 
     document.addEventListener('click', function(event) {
+        const allButtons = document.querySelectorAll('.button');
+        const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
+
         const triangleContainer = document.getElementById('triangleContainer');
         if (!triangleContainer.contains(event.target)) {
             if (firstButtonClick) {
@@ -160,15 +166,15 @@ TUTORIAL STAGE 1
         if (!firstDeselection && firstButtonClick) {
             firstDeselection = true;
         }
-        Object.keys(window.buttonStates).forEach(buttonId => {
-            window.buttonStates[buttonId].clickedByUser1 = false;
-            updateButtonAppearance(document.getElementById(buttonId), window.buttonStates[buttonId]);
+        Object.keys(buttonClickStates).forEach(buttonId => {
+            buttonClickStates[buttonId].clickedByUser1 = false;
+            updateButtonAppearance(document.getElementById(buttonId), buttonClickStates[buttonId]);
         });
         agreementButtonID = null;
     }
 
     function handleButtonClick(buttonId) {
-        const buttonState = window.buttonStates[buttonId];
+        const buttonState = buttonClickStates[buttonId];
         if (buttonState.clickedByUser1) {
             buttonState.clickedByUser1 = false;
             updateButtonAppearance(document.getElementById(buttonId), buttonState);
@@ -197,93 +203,164 @@ TUTORIAL STAGE 1
         }
     }
 
-    function startDecay() {
-        var currentValue = 3.00;
-        var display = document.getElementById('euValue');
-        liveSend({'timerStarted': Date.now()});
-        var decayInterval = setInterval(function() {
-            if (currentValue <= 0) {
-                displayResultsEnd();
-            } else {
-                currentValue -= 0.02;
-                display.textContent = currentValue.toFixed(2);
+    function generateTriangle(numOfCircles, totalPoints) {
+            const triangleContainer = document.getElementById('triangleContainer');
+            const numRows = Math.floor(Math.sqrt(2 * numOfCircles + 0.25) - 0.5);
+
+            //scaling factor for converting unscaled points to scaled points
+            //i.e (0,3,0) *scaling factor of 5=> (0,15,0)
+            const scalingFactor = totalPoints / (numRows - 1);
+
+            //generate each row of buttons for inverted triangle with "numRows" number of rows
+            for (let rowNum = numRows; rowNum >= 1; rowNum--) {
+
+                const numButtonsInRow=rowNum;
+                const whichPlayerPerspective=playerId;
+
+                //generate a new row of buttons and append to the triangle
+                let newRow=generateRow(rowNum, numButtonsInRow,whichPlayerPerspective,scalingFactor,numRows);
+                triangleContainer.appendChild(newRow);
             }
-        }, 1000);
-    }
+        }
 
-    function generateTriangle(n, points) {
-        const container = document.getElementById('triangleContainer');
-        const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
-        var bottomP = 0;
-        const mappings = {
-            1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}),
-            2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}),
-            3: (bottomP, leftP, rightP) => ({bottomP: leftP, leftP: rightP, rightP: bottomP})
-        };
+        //function to handle creating a row with multiple buttons
+        function generateRow(rowNum, numOfButtons,whichPlayerPerspective,scalingFactor,numRows){
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'triangle-row';
 
-        for (var rowNum = numRows; rowNum >= 1; rowNum--) {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'triangle-row';
-            var leftP = rowNum - 1;
-            var rightP = 0;
-            const scalingFactor = points / (numRows - 1);
-            for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
-                const {bottomP: rawBottomP, leftP: rawLeftP, rightP: rawRightP} = mappings[window.playerId](bottomP, leftP, rightP);
-                const scaledBottomP = formatCoordinate(rawBottomP * scalingFactor);
-                const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
-                const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
-                const buttonId = `btn${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
-                window.buttonStates[buttonId] = [];
-                const button = document.createElement('button');
-                button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`;
-                button.id = buttonId;
-                button.className = 'button';
-                button.type = 'button';
-                rowDiv.appendChild(button);
+                //for each button in the row
+                for (let i=0; i<numOfButtons;i++){
+                    //calculate points for each player
+                    //Note: from player 1's perspective: player 1 is bottom player, player 2 is left, player 3 is right
+                    let unscaledPointsForPlayer1= numRows-rowNum;
+                    let unscaledPointsForPlayer2= rowNum-1-i;
+                    let unscaledPointsForPlayer3= i;
 
-                button.addEventListener('click', function(e) {
-                    handleButtonClick(e.target.id);
-                });
+                    //scale points for each player
+                    let pointsForPlayer1=formatCoordinate(unscaledPointsForPlayer1*scalingFactor);
+                    let pointsForPlayer2=formatCoordinate(unscaledPointsForPlayer2*scalingFactor);
+                    let pointsForPlayer3=formatCoordinate(unscaledPointsForPlayer3*scalingFactor);
 
-                button.addEventListener('mouseenter', function(e) {
-                    var hoverValues = e.target.dataset.coords.split(',').map(function(coord) {
-                        return coord.trim().replace(/[()]/g, '');
-                    });
-                    showAndPositionHoverValue('hover-p1-value', hoverValues[0], 'bottom');
-                    showAndPositionHoverValue('hover-p2-value', hoverValues[1], 'topLeft');
-                    showAndPositionHoverValue('hover-p3-value', hoverValues[2], 'topRight');
-                });
+                    //generate a unique button and append to row
+                    let btn=generateButton(pointsForPlayer1,pointsForPlayer2,pointsForPlayer3,whichPlayerPerspective);
+                    rowDiv.appendChild(btn);
+                }
+            //return the row once all the buttons have been appended
+            return rowDiv;
+        }
 
-                button.addEventListener('mouseleave', function(e) {
-                    hideHoverValue('hover-p1-value');
-                    hideHoverValue('hover-p2-value');
-                    hideHoverValue('hover-p3-value');
-                });
 
-                leftP--;
-                rightP++;
+        //handles the creation of a single button
+        function generateButton(p1,p2,p3, whichPlayerPerspective){
+
+             //which player is it? depending on that, map the points correctly
+             const { p1: pointsForPlayer1, p2: pointsForPlayer2, p3: pointsForPlayer3 } = mapValuesBasedOnPerspective(p1, p2, p3, whichPlayerPerspective);
+
+             //create button element and set attributes
+             const button = document.createElement('button');
+             button.className = 'button';
+             button.type = 'button';
+             const buttonId = `btn${pointsForPlayer1}_${pointsForPlayer2}_${pointsForPlayer3}`;
+             button.id = buttonId;
+             button.dataset.coords = `(${pointsForPlayer1},${pointsForPlayer2},${pointsForPlayer3})`; // Store coordinates in data attribute
+
+             //for each button, we want to know who they've been clicked by
+             buttonClickStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
+
+             //attach event listeners to the button
+             addButtonEventListeners(button);
+
+             return button;
+        }
+
+
+        //function to attach event listeners to each newly created button
+        function addButtonEventListeners(button) {
+
+            // event listener for button click
+            button.addEventListener('click', (event) => {
+                handleButtonClick(event.target.id);
+            });
+
+            // event listener for mouse hover
+            button.addEventListener('mouseenter', (event) => {
+                // split the stored coordinates, clean them up, and convert them to numbers
+                const hoverValues = event.target.dataset.coords.split(',').map(coord => coord.trim().replace(/[()]/g, '')).map(Number);
+                const [p1, p2, p3] = hoverValues;
+
+                // map hover values based on the player's perspective (player 1, 2, or  3)
+                console.log(playerId)
+                const mappedValues = mapValuesBasedOnPerspective(p1, p2, p3, playerId);
+
+
+                // mapping the hover positions based on the player's perspective
+                const hoverPositions = {
+                    1: { bottom: 'p1', topLeft: 'p2', topRight: 'p3' },   // Player 1: p1 bottom, p2 top-left, p3 top-right
+                    2: { bottom: 'p2', topLeft: 'p3', topRight: 'p1' },   // Player 2: p2 bottom, p3 top-left, p1 top-right
+                    3: { bottom: 'p3', topLeft: 'p1', topRight: 'p2' }    // Player 3: p3 bottom, p1 top-left, p2 top-right
+                };
+
+                // extract the current player's hover mapping
+                const playerHoverMapping = hoverPositions[playerId];
+
+                // display the hover values based on the current player's perspective
+                showAndPositionHoverValue('hover-p1-value', mappedValues[playerHoverMapping.bottom], 'bottom');
+                showAndPositionHoverValue('hover-p2-value', mappedValues[playerHoverMapping.topLeft], 'topLeft');
+                showAndPositionHoverValue('hover-p3-value', mappedValues[playerHoverMapping.topRight], 'topRight');
+
+            });
+
+            // event listener for mouse leave
+            button.addEventListener('mouseleave', () => {
+                // Hide hover values when the mouse leaves the button
+                hideHoverValue('hover-p1-value');
+                hideHoverValue('hover-p2-value');
+                hideHoverValue('hover-p3-value');
+            });
+
+            // function to hide the hover value by ID
+            function hideHoverValue(id) {
+                const valueSpan = document.getElementById(id);
+                if (valueSpan) {
+                    valueSpan.style.display = 'none';
+                }
             }
-            container.appendChild(rowDiv);
-            bottomP++;
-            leftP = rowNum - 2;
-            rightP = 0;
         }
-    }
 
-    function formatCoordinate(value) {
-        if (Math.floor(value) !== value) {
-            return value.toFixed(1);
+
+        // maps values based on the player's perspective (Player 1: bottom, Player 2: left, Player 3: right)
+        function mapValuesBasedOnPerspective(p1, p2, p3, playerId) {
+            const mappings = {
+                1: (p1, p2, p3) => ({ p1, p2, p3 }),
+                2: (p1, p2, p3) => ({ p1: p2, p2: p3, p3: p1 }),
+                3: (p1, p2, p3) => ({ p1: p3, p2: p1, p3: p2 })
+            };
+
+            return mappings[playerId](p1, p2, p3);
         }
-        return value;
-    }
+
+
+        //formats a value to one decimal place if it's not an integer
+        function formatCoordinate(value) {
+            if (Math.floor(value) !== value) {
+                return value.toFixed(1);
+            }
+            return value;
+        }
+
 
     function showAndPositionHoverValue(id, value, position) {
         var valueSpan = document.getElementById(id);
         valueSpan.textContent = value;
         valueSpan.style.display = 'block';
+
         var containerRect = document.getElementById('triangleContainer').getBoundingClientRect();
+
+        // account for scrolling
         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        // position hover value based on specified position
         if (position === 'topLeft') {
             valueSpan.style.left = (containerRect.left + scrollLeft - 25) + 'px';
             valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
@@ -296,25 +373,37 @@ TUTORIAL STAGE 1
         }
     }
 
+
     function hideHoverValue(id) {
         var valueSpan = document.getElementById(id);
         valueSpan.style.display = 'none';
     }
 
     function positionCornerLabels() {
-        var triangleContainer = document.getElementById('triangleContainer');
-        var triangleRect = triangleContainer.getBoundingClientRect();
-        var participantALabel = document.getElementById('participant2Label');
-        var participantBLabel = document.getElementById('participant3Label');
-        var youLabel = document.getElementById('youLabel');
-        var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        participant2Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
-        participant2Label.style.left = (triangleRect.left + scrollLeft - 65) + 'px';
-        participant3Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
-        participant3Label.style.left = (triangleRect.right + scrollLeft - 30) + 'px';
-        youLabel.style.top = (triangleRect.bottom + scrollTop + 25) + 'px';
-        youLabel.style.left = (triangleRect.left + scrollLeft + (triangleRect.width - youLabel.offsetWidth) / 2) + 'px';
+        const triangleContainer = document.getElementById('triangleContainer');
+        const triangleRect = triangleContainer.getBoundingClientRect();
+
+        const participantALabel = document.getElementById('participant2Label');
+        const participantBLabel = document.getElementById('participant3Label');
+        const youLabel = document.getElementById('youLabel');
+
+        // fixed distances from triangle corners
+        const cornerOffsetX = 75;
+        const cornerOffsetY = 30;
+        const bottomOffset = 30;
+
+        // position labels around the triangle
+        participantALabel.style.position = 'absolute';
+        participantALabel.style.left = `${triangleRect.left - cornerOffsetX}px`;
+        participantALabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
+
+        participantBLabel.style.position = 'absolute';
+        participantBLabel.style.left = `${triangleRect.right + cornerOffsetX - participantBLabel.offsetWidth}px`;
+        participantBLabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
+
+        youLabel.style.position = 'absolute';
+        youLabel.style.left = `${triangleRect.left + (triangleRect.width - youLabel.offsetWidth) / 2}px`;
+        youLabel.style.top = `${triangleRect.bottom + bottomOffset}px`;
     }
 
     function updateButtonAppearance(button, btnState) {

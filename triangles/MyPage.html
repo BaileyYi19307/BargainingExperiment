@@ -1,292 +1,395 @@
-{{ block title }}
-{{ endblock }}
-{{ block content }}
+{{ block title }} {{ endblock }} {{ block content }}
 
 <div class="header-container">
-    <div class="currency-decay">1 EU= <span id="euValue">3.00</span></div>
-    <div class="timers-container">
-{#        <div id="timer">#}
-{#            Time to Agreement:#}
-{#        </div>#}
-{#        <div id="stopwatch">#}
-{#        </div>#}
-
-        <div id="agreement-timer">
-            Time to Agreement:
-        </div>
+  <div class="currency-decay">1 EU = <span id="euValue">3.00</span></div>
+  <div class="timers-container">
+    <div id="agreement-timer">Time to Agreement:</div>
+  </div>
+  <div class="values-container">
+    <div id="player-values">
+      P1: <span id="p1-value">__</span> P2: <span id="p2-value">__</span> P3:
+      <span id="p3-value">__</span>
     </div>
-    <div class="values-container">
-        <div id="player-values">
-            P1: <span id="p1-value">__</span>
-            P2: <span id="p2-value">__</span>
-            P3: <span id="p3-value">__</span>
-        </div>
-        <div id="hover-values">
-            <span id="hover-p1-value">Participant A</span>
-            <span id="hover-p2-value">Participant B</span>
-            <span id="hover-p3-value">You</span>
-        </div>
+    <div id="hover-values">
+      <span id="hover-p1-value">Participant A</span>
+      <span id="hover-p2-value">Participant B</span>
+      <span id="hover-p3-value">You</span>
     </div>
-
+  </div>
 </div>
-
-
 
 <div class="parent-container">
-    <div id="triangleContainer"></div>
-    <div class="corner-label top-left" id="participant2Label">Participant A
-
-        <div class="icon1"> 
-            <img src="{{ static 'images/female_icon2.png' }}" width="25" height="35"/>
-        </div>
+  <div id="triangleContainer">
+    <div class="corner-label top-left" id="participant2Label">
+      Participant A
+      <img
+        src="{{ static 'images/female_icon2.png' }}"
+        class="icon"
+        width="25"
+        height="35"
+      />
     </div>
-    <div class="corner-label top-right" id="participant3Label">Participant B
-        <div class="icon2">        
-            <img src="{{ static 'images/female_icon2.png' }}" width="25" height="35"/>
-        </div>
+    <div class="corner-label top-right" id="participant3Label">
+      Participant B
+      <img
+        src="{{ static 'images/female_icon2.png' }}"
+        class="icon"
+        width="25"
+        height="35"
+      />
     </div>
-    <div class="corner-label bottom" id="youLabel">You
-        <div class="icon3">        
-            <img src="{{ static 'images/female_icon2.png' }}" width="25" height="35"/>
-        </div>
+    <div class="corner-label bottom" id="youLabel">
+      <img
+        src="{{ static 'images/female_icon2.png' }}"
+        class="icon"
+        width="25"
+        height="35"
+      />
+      You
     </div>
+  </div>
 </div>
 
-
 <script>
-    let count=0;
 
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // CONFIGURATION
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // configuration settings for game
     var config = {
-        totalRows: 6,
-        totalPoints: 15,
-        timeToAgreement: 150,
-        ratificationTime: 3
-    }
-    window.buttonStates = {};  // Ensure this is empty before populating
+        totalNodes: 12,              // Number of nodes in the triangle
+        totalPoints: 15,             // Total points to distribute
+        initialCurrencyValue: 3.00,  // Starting currency value
+        ratificationTime: 3          // Time for ratification/agreement countdown
+    };
 
+    // track which buttons have been clicked and by who
+    window.buttonClickStates = {};
+
+    // store the player's ID
+    window.playerId = {{ player.id_in_group }};
+
+    // track the border color states for different actions
     var borderColors = {
         red: false,
         blue: false,
         green: false
     };
 
-    document.addEventListener('DOMContentLoaded', function() {
-        var totalNodes = 12; // define total num of circles
-        var totalPoints = 15; // define total num of points to distribute
-        generateTriangle(totalNodes, totalPoints);
-        positionCornerLabels();
-        startDecay();
-    });
-  function startDecay() {
-            var currentValue = 3.00;
-            var display = document.getElementById('euValue');
-            liveSend({'timerStarted':Date.now()}); //start of the timer reference point
+    // when the document is fully loaded, initialize the game setup
+        document.addEventListener('DOMContentLoaded', function() {
+            generateTriangle(config.totalNodes, config.totalPoints);
+            positionCornerLabels();
+            startDecay();
+        });
 
-            var decayInterval = setInterval(function() {
-                if (currentValue <= 0) {
-                    document.querySelector('form').submit();
-                } else {
-                    currentValue -= 0.02;
-                    display.textContent = currentValue.toFixed(2);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //CODE TO INITIALIZE THE TRIANGLE
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // function to generate triangle of n nodes
+        // points are divided equally
+        function generateTriangle(numOfCircles, totalPoints) {
+            const triangleContainer = document.getElementById('triangleContainer');
+            const numRows = Math.floor(Math.sqrt(2 * numOfCircles + 0.25) - 0.5);
+
+            //scaling factor for converting unscaled points to scaled points
+            //i.e (0,3,0) *scaling factor of 5=> (0,15,0)
+            const scalingFactor = totalPoints / (numRows - 1);
+
+            //generate each row of buttons for inverted triangle with "numRows" number of rows
+            for (let rowNum = numRows; rowNum >= 1; rowNum--) {
+
+                const numButtonsInRow=rowNum;
+                const whichPlayerPerspective=playerId;
+
+                //generate a new row of buttons and append to the triangle
+                let newRow=generateRow(rowNum, numButtonsInRow,whichPlayerPerspective,scalingFactor,numRows);
+                triangleContainer.appendChild(newRow);
+            }
+        }
+
+        //function to handle creating a row with multiple buttons
+        function generateRow(rowNum, numOfButtons,whichPlayerPerspective,scalingFactor,numRows){
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'triangle-row';
+
+                //for each button in the row
+                for (let i=0; i<numOfButtons;i++){
+                    //calculate points for each player
+                    //Note: from player 1's perspective: player 1 is bottom player, player 2 is left, player 3 is right
+                    let unscaledPointsForPlayer1= numRows-rowNum;
+                    let unscaledPointsForPlayer2= rowNum-1-i;
+                    let unscaledPointsForPlayer3= i;
+
+                    //scale points for each player
+                    let pointsForPlayer1=formatCoordinate(unscaledPointsForPlayer1*scalingFactor);
+                    let pointsForPlayer2=formatCoordinate(unscaledPointsForPlayer2*scalingFactor);
+                    let pointsForPlayer3=formatCoordinate(unscaledPointsForPlayer3*scalingFactor);
+
+                    //generate a unique button and append to row
+                    let btn=generateButton(pointsForPlayer1,pointsForPlayer2,pointsForPlayer3,whichPlayerPerspective);
+                    rowDiv.appendChild(btn);
                 }
-            }, 1000);
+            //return the row once all the buttons have been appended
+            return rowDiv;
         }
 
 
-    //generate a triangle of n nodes, among which points are divided equally
-    function generateTriangle(n, points) {
-        const container = document.getElementById('triangleContainer');
-        const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
+        //handles the creation of a single button
+        function generateButton(p1,p2,p3, whichPlayerPerspective){
 
-        var bottomP = 0;
+             //which player is it? depending on that, map the points correctly
+             const { p1: pointsForPlayer1, p2: pointsForPlayer2, p3: pointsForPlayer3 } = mapValuesBasedOnPerspective(p1, p2, p3, whichPlayerPerspective);
 
-        const mappings = {
-            1: (bottomP, leftP, rightP) => ({bottomP, leftP, rightP}),
-            2: (bottomP, leftP, rightP) => ({bottomP: rightP, leftP: bottomP, rightP: leftP}),
-            3: (bottomP, leftP, rightP) => ({bottomP: leftP, leftP: rightP, rightP: bottomP})
-        };
+             //create button element and set attributes
+             const button = document.createElement('button');
+             button.className = 'button';
+             button.type = 'button';
+             const buttonId = `btn${pointsForPlayer1}_${pointsForPlayer2}_${pointsForPlayer3}`;
+             button.id = buttonId;
+             button.dataset.coords = `(${pointsForPlayer1},${pointsForPlayer2},${pointsForPlayer3})`; // Store coordinates in data attribute
 
-        for (var rowNum = numRows; rowNum >= 1; rowNum--) {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'triangle-row';
-            var leftP = rowNum - 1;
-            var rightP = 0;
-            const scalingFactor = points / (numRows - 1);
+             //for each button, we want to know who they've been clicked by
+             buttonClickStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
 
-            for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
-                const {bottomP: rawBottomP, leftP: rawLeftP, rightP: rawRightP} = mappings[window.playerId](bottomP, leftP, rightP);
+             //attach event listeners to the button
+             addButtonEventListeners(button);
 
-                const scaledBottomP = formatCoordinate(rawBottomP * scalingFactor);
-                const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
-                const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
+             return button;
+        }
 
 
-                const buttonId = `btn${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
-                window.buttonStates[buttonId] = []; // Initialize as an empty array
-                const button = document.createElement('button');
-                button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`; // Store coordinates in data attribute
-                button.id = buttonId;
-                button.className = 'button';
-                button.type = 'button';
-                rowDiv.appendChild(button);
+        //function to attach event listeners to each newly created button
+        function addButtonEventListeners(button) {
 
-                //clicking the button
-                button.addEventListener('click', function(e) {
-                    handleButtonClick(e.target.id);
-                });
+            // event listener for button click
+            button.addEventListener('click', (event) => {
+                handleButtonClick(event.target.id);
+            });
 
-                //hovering over - show the point values for each player in the corner of the triangle
-                button.addEventListener('mouseenter', function(e) {
-                    var hoverValues = e.target.dataset.coords.split(',').map(function(coord) {
-                        return coord.trim().replace(/[()]/g, '');
-                    });
-                    var mappedValues = mapValuesBasedOnPlayer(hoverValues, window.playerId);
-                    showAndPositionHoverValue('hover-p1-value', mappedValues[0], 'topLeft');
-                    showAndPositionHoverValue('hover-p2-value', mappedValues[1], 'topRight');
-                    showAndPositionHoverValue('hover-p3-value', mappedValues[2], 'bottom');
+            // event listener for mouse hover
+            button.addEventListener('mouseenter', (event) => {
+                // split the stored coordinates, clean them up, and convert them to numbers
+                const hoverValues = event.target.dataset.coords.split(',').map(coord => coord.trim().replace(/[()]/g, '')).map(Number);
+                const [p1, p2, p3] = hoverValues;
 
-                });
+                // map hover values based on the player's perspective (player 1, 2, or  3)
+                console.log(playerId)
+                const mappedValues = mapValuesBasedOnPerspective(p1, p2, p3, playerId);
 
-                button.addEventListener('mouseleave', function(e) {
-                    hideHoverValue('hover-p1-value');
-                    hideHoverValue('hover-p2-value');
-                    hideHoverValue('hover-p3-value');
-                });
 
-                function hideHoverValue(id) {
-                    var valueSpan = document.getElementById(id);
+                // mapping the hover positions based on the player's perspective
+                const hoverPositions = {
+                    1: { bottom: 'p1', topLeft: 'p2', topRight: 'p3' },   // Player 1: p1 bottom, p2 top-left, p3 top-right
+                    2: { bottom: 'p2', topLeft: 'p3', topRight: 'p1' },   // Player 2: p2 bottom, p3 top-left, p1 top-right
+                    3: { bottom: 'p3', topLeft: 'p1', topRight: 'p2' }    // Player 3: p3 bottom, p1 top-left, p2 top-right
+                };
+
+                // extract the current player's hover mapping
+                const playerHoverMapping = hoverPositions[playerId];
+
+                // display the hover values based on the current player's perspective
+                showAndPositionHoverValue('hover-p1-value', mappedValues[playerHoverMapping.bottom], 'bottom');
+                showAndPositionHoverValue('hover-p2-value', mappedValues[playerHoverMapping.topLeft], 'topLeft');
+                showAndPositionHoverValue('hover-p3-value', mappedValues[playerHoverMapping.topRight], 'topRight');
+
+            });
+
+            // event listener for mouse leave
+            button.addEventListener('mouseleave', () => {
+                // Hide hover values when the mouse leaves the button
+                hideHoverValue('hover-p1-value');
+                hideHoverValue('hover-p2-value');
+                hideHoverValue('hover-p3-value');
+            });
+
+            // function to hide the hover value by ID
+            function hideHoverValue(id) {
+                const valueSpan = document.getElementById(id);
+                if (valueSpan) {
                     valueSpan.style.display = 'none';
                 }
-                window.buttonStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
-
-                //move onto next button
-                leftP--;
-                rightP++;
-            }
-            container.appendChild(rowDiv);
-            bottomP++;
-            leftP = rowNum - 2;
-            rightP = 0;
-        }
-    }
-
-    function formatCoordinate(value) {
-        if (Math.floor(value) !== value) {
-            return value.toFixed(1); // Rounds to one decimal point if not an integer
-        }
-        return value; // Returns the value as is if it's an integer
-    }
-
-    function handleButtonClick(buttonId) {
-        console.log(buttonId);
-        liveSend({
-            button_clicked: true, button_id:buttonId,participants:{{player.id_in_group}}
-        });
-    }
-
-
-    function liveRecv(data) { //data received includes the buttonId and the participant who clicked it
-        var button = document.getElementById(data.button_id);
-        var btnState = buttonStates[data.button_id];
-
-        if (data.player_id === 1) {
-            btnState.clickedByUser1 = !btnState.clickedByUser1;
-        } else if (data.player_id === 2) {
-            btnState.clickedByUser2 = !btnState.clickedByUser2;
-        } else if (data.player_id === 3) {
-            btnState.clickedByUser3 = !btnState.clickedByUser3;
-        }
-
-
-        //for all other buttons ('otherButtonId'), state is reset based on player who clicks
-        //i.e. if player 1 clicks a button, all other buttons set to "not-clicked" for player 1
-        Object.keys(buttonStates).forEach(function(otherButtonId) {
-            //executes only for buttons other than the one clicked
-            if (otherButtonId !== data.button_id) {
-                var otherBtnsState = buttonStates[otherButtonId];
-                if (data.player_id === 1) {
-                    otherBtnsState.clickedByUser1 = false; //clickedByUser1 for all other buttons set to 'false
-                } else if (data.player_id === 2) {
-                    otherBtnsState.clickedByUser2 = false;
-                } else if (data.player_id === 3) {
-                    otherBtnsState.clickedByUser3 = false;
-                }
-                updateButtonAppearance(document.getElementById(otherButtonId), otherBtnsState);
-            }
-        });
-
-        updateButtonAppearance(button, btnState);
-        update(button.id);
-
-        if (data.player_id === window.playerId) {
-            setPlayerValues(data.button_id);
-        }
-        updatePayoffs();
-
-    }
-
-    let agreementButtonID = null;  // ID of the button currently in agreement
-    let prevButtonStates = {};  // stores previous states for all buttons
-
-    function update(buttonID) {
-        // calculate the current sum for the button being updated
-        const currentSum = Object.values(window.buttonStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
-        const activeParticipants = Object.entries(window.buttonStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
-
-
-        // if there's a button under agreement, check its state
-        if (agreementButtonID !== null) {
-            const agreementCurrentSum = Object.values(window.buttonStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
-
-            // check if num of active clicks on the agreement button drops below two
-            if (agreementCurrentSum < 2) {
-                stopAgreementTimer();
-                console.log(`Agreement broken on button ${agreementButtonID}`);
-                agreementButtonID = null;  // Clear the agreement state
-
             }
         }
 
-        liveSend({ numInAgreement: currentSum, activeParticipants: activeParticipants });
 
-        // if the current button reaches an agreement condition and no other agreement is active
-        if (currentSum >= 2 && agreementButtonID === null) {
-            startAgreementTimer();
-            agreementButtonID = buttonID;
-            console.log(`Agreement started on button ${buttonID}`);
+        // maps values based on the player's perspective (Player 1: bottom, Player 2: left, Player 3: right)
+        function mapValuesBasedOnPerspective(p1, p2, p3, playerId) {
+            const mappings = {
+                1: (p1, p2, p3) => ({ p1, p2, p3 }),
+                2: (p1, p2, p3) => ({ p1: p2, p2: p3, p3: p1 }),
+                3: (p1, p2, p3) => ({ p1: p3, p2: p1, p3: p2 })
+            };
+
+            return mappings[playerId](p1, p2, p3);
         }
 
-        // store the current state for the next update
-        prevButtonStates[buttonID] = { ...window.buttonStates[buttonID] };
+
+        //formats a value to one decimal place if it's not an integer
+        function formatCoordinate(value) {
+            if (Math.floor(value) !== value) {
+                return value.toFixed(1);
+            }
+            return value;
+        }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // HANDLE TIMER LOGIC
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // starts the decay timer which reduces the currency value over time
+    function startDecay() {
+        let currentValue = config.initialCurrencyValue;  // initial currency value
+        const display = document.getElementById('euValue');  // element to display decay value
+
+        // send the starting point of the decay timer to the server
+        liveSend({ 'timerStarted': Date.now() });
+
+        // decrease the currency value periodically
+        const decayInterval = setInterval(function() {
+            if (currentValue <= 0) {
+                // submit the form when the decay reaches zero
+                document.querySelector('form').submit();
+            } else {
+                currentValue -= 0.02;
+                display.textContent = currentValue.toFixed(2);  // update the displayed value
+            }
+        }, 1000);  // every second
     }
 
-function startAgreementTimer() {
-    const agreementDisplay = document.getElementById('agreement-timer');
-    let seconds = config.ratificationTime; // Ensure proper syntax with a semicolon
 
-    window.agreementTimer = setInterval(() => {
-        seconds--;
-        agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
-        if (seconds === 0) {
-            // updatePayoffsInAgreement()            
-            document.querySelector('form').submit(); // Submit the form to move to the next screen
-        }
-    }, 1000);
-}
+    // starts the agreement timer, counting down the ratification time
+    function startAgreementTimer() {
+        const agreementDisplay = document.getElementById('agreement-timer');
+        let seconds = config.ratificationTime;  // agreement countdown
+
+        // decrease the timer every second
+        window.agreementTimer = setInterval(() => {
+            seconds--;
+            agreementDisplay.textContent = `Time to Agreement: ${seconds}`;
+
+            // submit the form when time runs out
+            if (seconds === 0) {
+                document.querySelector('form').submit();
+            }
+        }, 1000);
+    }
 
 
+    // stops the agreement timer and resets the display
     function stopAgreementTimer() {
-        // livesend({payoffs:{6:false}});
-        clearInterval(window.agreementTimer);
+        clearInterval(window.agreementTimer);  // stop the timer
         window.agreementTimer = null;
-        document.getElementById('agreement-timer').textContent = 'Time to Agreement:';
+        document.getElementById('agreement-timer').textContent = 'Time to Agreement:';  // reset display
     }
 
 
-    function updateButtonAppearance(button, btnState) {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // LIVE DATA HANDLING AND BUTTON CLICKING
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    let lastClickedButton = null; // Initialize globally
 
-        //reset button back to neutral state
-        button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
+        function liveRecv(data) { //data received includes the buttonId and the participant who clicked it
+            var button = document.getElementById(data.button_id);
+            var btnState = buttonClickStates[data.button_id];
+
+            //update state base on the player who clicked it
+            updatePlayerClickState(btnState,data.player_id);
+
+            //reset state for other buttons clicked by the same player
+            resetOtherButtonState(data.button_id, data.player_id);
+
+            //update button appearance and game states
+            updateButtonAppearance(button, btnState);
+            monitorClickAgreement(button.id);
+
+            lastClickedButton = button.id;
+
+            //if player who clicked the button is current player
+            //update displayed points
+            if (data.player_id === playerId) {
+                updateDisplayedPoints(data.button_id);
+            }
+            //send updated payoffs to server
+            updatePayoffs();
+
+        }
+
+
+    //handle button clicks
+    function handleButtonClick(buttonId) {
+            liveSend({
+                button_clicked: true,
+                button_id:buttonId,
+                participants:playerId
+            });
+
+            lastClickedButtonId = buttonId
+        }
+
+
+        // detect clicks outside of buttons
+        document.addEventListener('click', function(event) {
+            const allButtons = document.querySelectorAll('.button');
+            const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
+
+            console.log('clicked on button:', clickedOnButton);
+
+            // deselect the last clicked button if the click was outside
+            if (!clickedOnButton && lastClickedButtonId) {
+                liveSend({
+                    button_clicked: false,
+                    button_id: lastClickedButtonId,
+                    participants: playerId
+                });
+
+                console.log('deselecting button:', lastClickedButtonId);
+                lastClickedButtonId = null;
+            }
+        });
+
+
+        let agreementButtonID = null;  // tracks the button currently in agreement
+        let prevButtonStates = {};  // stores previous states for all buttons
+
+        function monitorClickAgreement(buttonID) {
+            // calculate the total number of clicks on the current button
+            const totalClicksOnButton = Object.values(buttonClickStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
+
+            // identify which participants are actively clicking the button
+            const activeParticipants = Object.entries(buttonClickStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
+
+
+            // if there's already button under agreement, check its state
+            if (agreementButtonID !== null) {
+                const agreementCurrentSum = Object.values(buttonClickStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
+
+                // if agreement condition (2+ clicks) is broken, stop the timer and clear agreement
+                if (agreementCurrentSum < 2) {
+                        stopAgreementTimer();
+                        console.log(`Agreement broken on button ${agreementButtonID}`);
+                        agreementButtonID = null;  // clear the agreement state
+                    }
+            }
+
+            liveSend({ numInAgreement: totalClicksOnButton, activeParticipants: activeParticipants });
+
+            // if the current button reaches an agreement condition and no other agreement is active, stop the agreement
+            if (totalClicksOnButton >= 2 && agreementButtonID === null) {
+                startAgreementTimer();
+                agreementButtonID = buttonID;
+                console.log(`Agreement started on button ${buttonID}`);
+            }
+
+            // store the current state for the next update
+            prevButtonStates[buttonID] = { ...buttonClickStates[buttonID] };
+        }
+
 
         //map playerId to a specific color scheme from perspective of each player
         var playerColor = {
@@ -295,376 +398,365 @@ function startAgreementTimer() {
             3: {1: 'red', 2: 'blue', 3: 'green'}
         };
 
-        function getColorBorderClass(playerNum) {
-            return playerColor[window.playerId][playerNum] + '-border';
+
+        function updateButtonAppearance(button, btnState) {
+            //reset button back to neutral state
+            button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
+            const currentPlayerColors=playerColor[playerId];
+
+            //track which players are currently clicking on the button
+            var clickedPlayers=[];
+            if (btnState.clickedByUser1) clickedPlayers.push(1);
+            if (btnState.clickedByUser2) clickedPlayers.push(2);
+            if (btnState.clickedByUser3) clickedPlayers.push(3);
+
+            //apply border class based on number of players clicking this button
+            if (clickedPlayers.length === 3) { //everyone's clicking on this button
+                button.classList.add('all-borders');
+            } else if (clickedPlayers.length === 2) {
+                button.classList.add(getCombinedColorClass(clickedPlayers[0], clickedPlayers[1]));
+            } else if (clickedPlayers.length === 1) {
+                button.classList.add(getColorBorderClass(clickedPlayers[0]));
+            }
+
+            //get color border class for a player
+            function getColorBorderClass(playerNum) {
+                return `${currentPlayerColors[playerNum]}-border`;
+            }
+
+            //combine colors for two players clicking same button
+            function getCombinedColorClass(playerNum1, playerNum2) {
+                const colors = [currentPlayerColors[playerNum1], currentPlayerColors[playerNum2]].sort();
+                return colors.join('-');
+            }
         }
 
-        function getCombinedColorClass(playerNum1, playerNum2) {
-            var colors = [playerColor[window.playerId][playerNum1], playerColor[window.playerId][playerNum2]].sort();
-            return colors.join('-');
+
+        //updates and sends current payoffs and game data to the server
+        function updatePayoffs() {
+            // Get payoff values from the input fields
+            const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
+            const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
+            const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
+
+            //get current exchange rate
+            const currentExchangeRate = parseFloat(document.getElementById('euValue').textContent);
+
+            //current time
+            var currentTime = new Date();
+
+            console.log("Updating payoffs", { payoff1, payoff2, payoff3, currentExchangeRate });
+
+            // Send the new payoffs to the server and additional info for tracking
+            liveSend({
+                payoffs: {
+                    p1_points: payoff1,
+                    p2_points: payoff2,
+                    p3_points: payoff3,
+                    currency_decay: currentExchangeRate,
+                    player_id: playerId,
+                    timestamp: currentTime.toISOString(),
+                    time_since: Date.now()
+                }
+            });
         }
 
-        //who's currently clicking on this button?
-        var activePlayers = [];
-        if (btnState.clickedByUser1){
-            activePlayers.push(1);
-        }
-        if (btnState.clickedByUser2) {
-            activePlayers.push(2);
-        }
-        if (btnState.clickedByUser3) {
-            activePlayers.push(3);
+        // updates the displayed points for players P1, P2, and P3 based on the clicked button
+        function updateDisplayedPoints(buttonId) {
+
+            // extract the numeric values from the buttonId (e.g., 'btn10_20_30' -> [10, 20, 30])
+            var values = buttonId.replace('btn', '').split('_').map(Number);
+            document.getElementById('p1-value').textContent = values[0]; //update P1 value
+            document.getElementById('p2-value').textContent = values[1];
+            document.getElementById('p3-value').textContent = values[2];
         }
 
 
-
-        if (activePlayers.length === 3) { //everyone's clicking on this button
-            button.classList.add('all-borders');
-        } else if (activePlayers.length === 2) { //two players are clicking on this button
-            button.classList.add(getCombinedColorClass(activePlayers[0], activePlayers[1]));
-
-        } else if (activePlayers.length === 1) { //one player is clicking on this button
-            button.classList.add(getColorBorderClass(activePlayers[0]));
+        //returns values mapping based on playerID to be shown in hover values
+        function mapValuesBasedOnPlayer(values, playerId) {
+            // This function will return the values array reordered based on the player ID
+            switch(playerId) {
+                case 1: // Original order for Player 1
+                    return [values[1],values[2],values[0]]
+                case 2: // Switch positions for Player 2 perspective
+                    return [values[2], values[0], values[1]];
+                case 3: // Different order for Player 3
+                    return [values[0], values[1], values[2]];
+                default:
+                    return [values[1],values[2],values[0]]
+            }
         }
 
-    }
-
-function updatePayoffs() {
-    // Get payoff values from the input fields
-    const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
-    console.log(payoff1);
-    const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
-    const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
-
-    const currencyDecay= parseFloat(document.getElementById('euValue').textContent);
-    var time = new Date();
-
-    console.log("Hi");
-    // Send the new payoffs to the server
-    liveSend({
-        payoffs: {
-            1: payoff1,
-            2: payoff2,
-            3: payoff3,
-            4: currencyDecay,
-            5: window.playerId,
-            7: time.toISOString(),
-            8: Date.now()
-        }
-    });
-}
-
-
-
-
-    function setPlayerValues(buttonId) {
-        var values = buttonId.replace('btn', '').split('_').map(Number);
-
-        document.getElementById('p1-value').textContent = values[0];
-        document.getElementById('p2-value').textContent = values[1];
-        document.getElementById('p3-value').textContent = values[2];
-    }
-
-    //returns values mapping based on playerID to be shown in hover values
-    function mapValuesBasedOnPlayer(values, playerId) {
-        // This function will return the values array reordered based on the player ID
-        switch(playerId) {
-            case 1: // Original order for Player 1
-                return [values[1],values[2],values[0]]
-            case 2: // Switch positions for Player 2 perspective
-                return [values[2], values[0], values[1]];
-            case 3: // Different order for Player 3
-                return [values[0], values[1], values[2]];
-            default:
-                return [values[1],values[2],values[0]]
-        }
-    }
-
-    function showAndPositionHoverValue(id, value, position) {
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // POSITION ELEMENTS (HOVER VALUE AND CORNER LABELS)
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+        function showAndPositionHoverValue(id, value, position) {
         var valueSpan = document.getElementById(id);
         valueSpan.textContent = value;
         valueSpan.style.display = 'block';
 
         var containerRect = document.getElementById('triangleContainer').getBoundingClientRect();
 
+        // account for scrolling
         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
+        // position hover value based on specified position
         if (position === 'topLeft') {
-            valueSpan.style.left = (containerRect.left + scrollLeft-25) + 'px';
+            valueSpan.style.left = (containerRect.left + scrollLeft - 25) + 'px';
             valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
         } else if (position === 'topRight') {
-            valueSpan.style.left = (containerRect.right + scrollLeft +25 - valueSpan.offsetWidth) + 'px';
+            valueSpan.style.left = (containerRect.right + scrollLeft + 25 - valueSpan.offsetWidth) + 'px';
             valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
         } else if (position === 'bottom') {
             valueSpan.style.left = (containerRect.left + scrollLeft + (containerRect.width - valueSpan.offsetWidth) / 2) + 'px';
-            valueSpan.style.top = (containerRect.bottom + scrollTop +25 - valueSpan.offsetHeight) + 'px';
+            valueSpan.style.top = (containerRect.bottom + scrollTop + 25 - valueSpan.offsetHeight) + 'px';
         }
     }
 
-     function positionCornerLabels() {
-        var triangleContainer = document.getElementById('triangleContainer');
-        var triangleRect = triangleContainer.getBoundingClientRect();
 
-        var participantALabel = document.getElementById('participant2Label');
-        var participantBLabel = document.getElementById('participant3Label');
-        var youLabel = document.getElementById('youLabel');
+    function positionCornerLabels() {
+        const triangleContainer = document.getElementById('triangleContainer');
+        const triangleRect = triangleContainer.getBoundingClientRect();
 
-        // Calculate the scroll offsets
-        var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const participantALabel = document.getElementById('participant2Label');
+        const participantBLabel = document.getElementById('participant3Label');
+        const youLabel = document.getElementById('youLabel');
 
-        // Position Participant A label
-        participant2Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
-        participant2Label.style.left = (triangleRect.left + scrollLeft - 65) + 'px';
+        // fixed distances from triangle corners
+        const cornerOffsetX = 75;
+        const cornerOffsetY = 30;
+        const bottomOffset = 30;
 
-        // Position Participant B label
-        participant3Label.style.top = (triangleRect.top + scrollTop - 30) + 'px';
-        participant3Label.style.left = (triangleRect.right + scrollLeft-30) + 'px';
+        // position labels around the triangle
+        participantALabel.style.position = 'absolute';
+        participantALabel.style.left = `${triangleRect.left - cornerOffsetX}px`;
+        participantALabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
 
-        // Position 'You' label
-        youLabel.style.top = (triangleRect.bottom + scrollTop + 25) + 'px';
-        youLabel.style.left = (triangleRect.left + scrollLeft + (triangleRect.width - youLabel.offsetWidth) / 2) + 'px';
+        participantBLabel.style.position = 'absolute';
+        participantBLabel.style.left = `${triangleRect.right + cornerOffsetX - participantBLabel.offsetWidth}px`;
+        participantBLabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
+
+        youLabel.style.position = 'absolute';
+        youLabel.style.left = `${triangleRect.left + (triangleRect.width - youLabel.offsetWidth) / 2}px`;
+        youLabel.style.top = `${triangleRect.bottom + bottomOffset}px`;
     }
 
-    // Call this function initially and on window resize or scroll
 
-        function startTimer(duration) {
-            var display = document.getElementById('timer');
-            var displayStopwatch=document.getElementById('stopwatch');
-            var stopwatch=0;
-            var timer = duration, minutes, seconds;
-            var interval = setInterval(function () {
-                stopwatch++;
-                minutes = parseInt(timer / 60, 10);
-                seconds = parseInt(timer % 60, 10);
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// HELPER FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+    function updatePlayerClickState(btnState, playerId) {
+            if (playerId === 1) {
+                btnState.clickedByUser1 = !btnState.clickedByUser1;
+            } else if (playerId === 2) {
+                btnState.clickedByUser2 = !btnState.clickedByUser2;
+            } else if (playerId === 3) {
+                btnState.clickedByUser3 = !btnState.clickedByUser3;
+            }
+        }
 
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
-
-                display.textContent = 'Time left: ' + minutes + ":" + seconds;
-
-                if (--timer < 0) {
-                    clearInterval(interval);
-                    var form = document.querySelector('form');
-                    if(form) {
-                        form.submit();
+        //for all other buttons ('otherButtonId'), state is reset based on player who clicks
+        //i.e. if player 1 clicks a button, all other buttons set to "not-clicked" for player 1
+        function resetOtherButtonState(buttonId, playerId) {
+            Object.keys(buttonClickStates).forEach(function(otherButtonId) {
+                if (otherButtonId !== buttonId) {
+                    const otherBtnsState = buttonClickStates[otherButtonId];
+                    if (playerId === 1) {
+                        otherBtnsState.clickedByUser1 = false;
+                    } else if (playerId === 2) {
+                        otherBtnsState.clickedByUser2 = false;
+                    } else if (playerId === 3) {
+                        otherBtnsState.clickedByUser3 = false;
                     }
+                    updateButtonAppearance(document.getElementById(otherButtonId), otherBtnsState);
                 }
-            }, 1000);
+            });
         }
-
-
-    function setPlayerValues(buttonId) {
-        var values = buttonId.replace('btn', '').split('_').map(Number);
-
-        document.getElementById('p1-value').textContent = values[0];
-        document.getElementById('p2-value').textContent = values[1];
-        document.getElementById('p3-value').textContent = values[2];
-    }
-
-    // get and store the player's ID
-    window.playerId = {{ player.id_in_group }};
-
-
-
 </script>
 
 <style>
+  .parent-container {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    min-width: 500px;
+  }
 
-    #participant2Label {
-        font-weight: bold;
-        color: orange;
-    }
+  #triangleContainer {
+    display: inline-block;
+    margin-top: 50px;
+    text-align: center;
+  }
 
-    #participant3Label {
-        font-weight: bold;
-        color: blue;
-    }
-
-    #youLabel {
-        font-weight: bold;
-        color: green;
-    }
-
-    #participantLabel2{
-        position:absolute;
-    }
-
-    .icon1{
-        position:relative;
-        height:42px;
-        width:30px;
-    }
-
-    .icon2{
-        position:relative;
-        height:42px;
-        width:30px;
-        left:60px;
-    }
-
-    .icon3{
-        position:relative;
-        height:42px;
-        width:30px;
-
-    }
-    #triangleContainer{
-        display: inline-block;
-        margin-top:50px;
-    }
-    .header-container {
-        display: flex;
-        flex-direction: column; /* Stack the child divs vertically */
-        align-items: center;
-        justify-content:center;
-    }
-
-    .values-container, .timers-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width:100%;
-    }
-
-    #hover-p1-value, #hover-p2-value, #hover-p3-value {
+  .corner-label {
     position: absolute;
-    display: none; /* Hide initially */
-}
+    font-size: 16px;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
+  .icon1,
+  .icon2 {
+    height: 42px;
+    width: 30px;
+    position: relative;
+    margin: 10px;
+    margin-top: 2px;
+  }
 
-    #timer, #agreement-timer {
-        flex-basis: 50%; /* Divide the space equally between the two elements */
-        text-align: center; /* Center the text within each element */
-        margin: 0;
-        padding:0;
-        font-size: 20px;
-    }
+  #participant2Label,
+  #participant3Label,
+  #youLabel {
+    padding: 0;
+    margin: 0;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
 
-    .currency-decay{
-        height:30px;
-        width:200px;
-        border:1px solid green;
-        text-align: center;
-    }
+  #participant2Label {
+    align-items: flex-start;
+    color: orange;
+  }
 
-    #player-values{
-        display:none;
-        margin-bottom:30px;
-    }
+  #participant3Label {
+    align-items: flex-end;
+    color: blue;
+  }
 
+  #youLabel {
+    align-items: center;
+    color: green;
+    text-align: center;
+  }
 
-    .triangle-row {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .button {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        font-size: 0px; /* Keep text hidden by default */
-        line-height: 30px; /* Center text vertically */
-        color: black;
-        border: 1px solid #ccc;
-        background-color: white;
-        position: relative; /* Set position context for the pseudo-element */
-        overflow: hidden; /* Prevents content from spilling out */
-    }
+  .header-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
-        .button:hover {
-        background-color: rgba(0, 0, 0, 0.5); /* Shading effect */
-    }
+  .values-container,
+  .timers-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
 
+  #hover-p1-value,
+  #hover-p2-value,
+  #hover-p3-value {
+    position: absolute;
+    display: none;
+  }
 
-    .red-border{
-        border: 2px solid red;
-    }
+  #timer,
+  #agreement-timer {
+    flex-basis: 50%;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+  }
 
-    .blue-border{
-        border: 2px solid blue;
-    }
+  .currency-decay {
+    height: 30px;
+    width: 200px;
+    border: 1px solid green;
+    text-align: center;
+  }
 
-    .green-border{
-        border: 2px solid green;
-    }
+  #player-values {
+    display: none;
+    margin-bottom: 30px;
+  }
 
-    /*.both-borders{*/
-    /*    border: none; !* Remove default border *!*/
-    /*    box-shadow: 0 0 0 2px red, 0 0 0 4px blue; !* Create a purple border with red and blue shadows *!*/
-    /*}*/
+  .triangle-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-    .red-blue{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-    }
+  .button {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 0px;
+    line-height: 30px;
+    color: black;
+    border: 1px solid #ccc;
+    background-color: white;
+    position: relative;
+    overflow: hidden;
+  }
 
-    .red-green{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
-    }
+  .button:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
 
-    .green-blue{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-    }
+  .red-border {
+    border: 2px solid red;
+  }
 
-    .blue-red{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-    }
+  .blue-border {
+    border: 2px solid blue;
+  }
 
-    .green-red{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px green; /* Create a purple border with red and blue shadows */
-    }
+  .green-border {
+    border: 2px solid green;
+  }
 
-    .blue-green{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px green, 0 0 0 4px blue; /* Create a purple border with red and blue shadows */
-    }
+  .red-blue {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
+  }
 
-    .all-borders{
-        border: none; /* Remove default border */
-        box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green; /* Create a purple border with red and blue shadows */
-    }
+  .red-green {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px green;
+  }
 
-    .red-fill {
-        background-color: red; /* Fills the button with red color */
-    }
+  .green-blue {
+    border: none;
+    box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
+  }
 
-    .layers{
-        display:flex;
-        flex-direction: row;
-        justify-content: center;
-        align-content: center;
-    }
+  .blue-red {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
+  }
 
-    .parent-container{
-        display: flex;
-        align-content: center;
-        justify-content: center;
-        min-width:500px;
-    }
+  .green-red {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px green;
+  }
 
-    .corner-label {
-        position: absolute;
-        font-size: 16px;
-        white-space:nowrap;
-    }
+  .blue-green {
+    border: none;
+    box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
+  }
 
-    #participantALabel{
-        border: 1px solid black;
-    }
+  .all-borders {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green;
+  }
 
+  .red-fill {
+    background-color: red;
+  }
 
-
+  .layers {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: center;
+  }
 </style>
 
-
-{{ formfields }}
-{{ next_button }}
-
-
-{{ endblock }}
+{{ formfields }} {{ endblock }}

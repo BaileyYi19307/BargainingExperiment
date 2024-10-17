@@ -20,8 +20,6 @@ class C(BaseConstants):
     NUM_ROUNDS = 1          # number of cycles of the entire game
     NUM_ROUNDS_FOR_PAYMENT = 3
 
-
-
 class Subsession(BaseSubsession):
     def creating_session(self):
         if random_grouping:
@@ -190,99 +188,82 @@ class Report(ExtraModel):
     Timestamp = models.StringField()
     Time_Since_Round_Start= models.FloatField()
 
-
 class MyPage(Page):
     @staticmethod
     def live_method(player, data):
-        session=player.session
+        session = player.session
         g = player.group
 
+        # handle timer start
         if 'timerStarted' in data:
-            session.vars['beginningTime']=float(data['timerStarted'])
+            session.vars['beginningTime'] = float(data['timerStarted'])
 
+        # track previous clicker
         if 'participants' in data:
             g.previousClicker = data['participants']
 
+        # track active participants in agreement
         if 'activeParticipants' in data:
-            active_participants=data['activeParticipants']
+            active_participants = data['activeParticipants']
 
         session.vars.setdefault('who_in_agreement', [])
-        session.vars['numAgree'] = len(session.vars['who_in_agreement'])
-        NumAgree = session.vars['numAgree']
-        WhoAgrees = session.vars['who_in_agreement']
+        who_agrees = session.vars['who_in_agreement']
+        num_agree = len(who_agrees)
+        session.vars['numAgree'] = num_agree
 
+        # handle agreement logic
         if 'numInAgreement' in data:
-            previousNumInAgreement = NumAgree
             if data['numInAgreement'] < 2:
-                if previousNumInAgreement >= 2:
-                    if any(participant in WhoAgrees for participant in active_participants):
-                        WhoAgrees.clear()
-                    else:
-                        pass
-                else: # only one participant is clicking on the button being updated
-                    WhoAgrees.clear()
-                    list(map(lambda x: WhoAgrees.append(x), active_participants))
+                if num_agree >= 2 and any(participant in who_agrees for participant in active_participants):
+                    who_agrees.clear()
+                else:
+                    who_agrees.clear()
+                    who_agrees.extend(active_participants)
             else:
-                WhoAgrees.clear()
-                list(map(lambda x: WhoAgrees.append(x), active_participants))
-                session.vars['numAgree'] = len(session.vars['who_in_agreement'])
+                who_agrees.clear()
+                who_agrees.extend(active_participants)
+                session.vars['numAgree'] = len(who_agrees)
 
-        # print(session.vars['who_in_agreement'])
-        # print(session.vars['numAgree'])
-
-
+        # handle payoffs
         if 'payoffs' in data:
-            if data['payoffs']['5'] is g.previousClicker:
-                g.previousClicker=data['payoffs']['5']
-                round_num=player.round_number
-                p1_score=data['payoffs']['1']
-                p2_score=data['payoffs']['2']
-                p3_score=data['payoffs']['3']
-                time_stamp=data['payoffs']['7']
-                time_since=float(data['payoffs']['8'])
-                since_beginning=(time_since-session.vars['beginningTime'])/1000
-                #change 150 to the maximum amount of time the session has
-                # currency_decay=100*((3-data['payoffs']['4'])/2) #decreases at a rate of 0.02 per second
-                # time_stamp=150-currency_decay
-                P1_agree = 1 if "clickedByUser1" in session.vars['who_in_agreement'] else 0
-                P2_agree = 1 if "clickedByUser2" in session.vars['who_in_agreement'] else 0
-                P3_agree = 1 if "clickedByUser3" in session.vars['who_in_agreement'] else 0
-                Report.create(Session_Code=g.session.code,Subject_ID=player.participant.code,Group_Num=g.id,Round_Num=player.custom_round_num,SubGroup_ID=data['payoffs']['5'], S1_Points=p1_score, S2_Points=p2_score, S3_Points=p3_score, P1_Agree=P1_agree, P2_Agree=P2_agree,P3_Agree=P3_agree,NumInAgreement=len(session.vars['who_in_agreement']), Timestamp=time_stamp,Time_Since_Round_Start=since_beginning)
-                currencyDecay = data['payoffs']['4']
+            player_id = data['payoffs']['player_id']
+            if player_id == g.previousClicker:
+                g.previousClicker = player_id
+                time_since = float(data['payoffs']['time_since']) 
+                since_beginning = (time_since - session.vars['beginningTime']) / 1000
+                currency_decay = data['payoffs']['currency_decay'] 
+                p1_agree = int("clickedByUser1" in who_agrees)
+                p2_agree = int("clickedByUser2" in who_agrees)
+                p3_agree = int("clickedByUser3" in who_agrees)
 
-                # Ensure default values if None is found
-                default_payoff = 0
+                # create report entry
+                Report.create(
+                    Session_Code=g.session.code,
+                    Subject_ID=player.participant.code,
+                    Group_Num=g.id,
+                    Round_Num=player.custom_round_num,
+                    SubGroup_ID=player_id,
+                    S1_Points=data['payoffs']['p1_points'], 
+                    S2_Points=data['payoffs']['p2_points'], 
+                    S3_Points=data['payoffs']['p3_points'],  
+                    P1_Agree=p1_agree,
+                    P2_Agree=p2_agree,
+                    P3_Agree=p3_agree,
+                    NumInAgreement=len(who_agrees),
+                    Timestamp=data['payoffs']['timestamp'],
+                    Time_Since_Round_Start=since_beginning
+                )
 
-                p1 = g.get_player_by_id(1)
-                p1_payoff = data['payoffs']['1']
-                if p1_payoff is None:
-                    p1.payoff = default_payoff
-                p1.payoff=p1_payoff
-                p1.currency = round(float(p1.payoff) * currencyDecay,2)
-                p1.ogCurrency = float(p1.payoff) * 3.00
+                # update payoffs and currency for each player
+                for player_id in [1, 2, 3]:
+                    p = g.get_player_by_id(player_id)
+                    p_payoff = data['payoffs'].get(f'p{player_id}_points', 0) 
+                    p.payoff = p_payoff
+                    p.currency = round(p_payoff * currency_decay, 2)
+                    p.ogCurrency = p_payoff * 3.00
 
-                p2 = g.get_player_by_id(2)
-                p2_payoff = data['payoffs'].get('2')
-                if p2_payoff is None:
-                    p2.payoff = default_payoff
-                p2.payoff = p2_payoff
-                p2.currency = round(float(p2.payoff) * currencyDecay,2)
-                p2.ogCurrency = float(p2.payoff) * 3.00
-
-
-                p3 = g.get_player_by_id(3)
-                p3_payoff = data['payoffs'].get('3')
-                if p3_payoff is None:
-                    p3.payoff = default_payoff
-                p3.payoff=p3_payoff
-                p3.currency = round(float(p3.payoff) * currencyDecay,2)
-                p3.ogCurrency = float(p3.payoff) * 3.00
-
-                # print("1")
-                # print(p1.payoff)
-                # print(p2.payoff)
-                # print(p3.payoff)
-
+                # store round payoffs
+                round_num = player.round_number
                 round_payoffs = json.loads(player.round_payoffs)
                 round_payoffs[str(round_num)] = {
                     'payoff': float(player.payoff),
@@ -291,6 +272,7 @@ class MyPage(Page):
                 }
                 player.round_payoffs = json.dumps(round_payoffs)
 
+        # handle button click event
         if 'button_clicked' in data:
             return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
