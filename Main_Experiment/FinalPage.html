@@ -1,0 +1,18 @@
+{{ block title }}
+    Final Screen
+{{ endblock }}
+
+{{ block content }}
+    <div style="text-align: center; padding: 20px;">
+        <h1>Thank you for participating!</h1>
+        <p>This is the end of the game. Please follow any additional instructions your administrator has given you.</p>
+        <p>The rounds selected for payment are: {{ payment_rounds }}</p>
+        <p>Payment details for the selected rounds:</p>
+        <ul>
+            {% for round, payment in payment_details.items %}
+                <li>Round {{ round }}: ${{ payment }}</li>
+            {% endfor %}
+        </ul>
+        <p>Your total payment is: ${{ total_payment }}</p>
+    </div>
+{{ endblock }}
