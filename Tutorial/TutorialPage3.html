@@ -1,0 +1,342 @@
+{{ block title }}
+    Making Agreements
+{{ endblock }}
+
+{{ block content }}
+
+<div class="text">
+    <ul>
+        <li>During the real interactions, any of the three participants (including you) may click on any circle at any time.</li>
+        <li>When you click on a circle, the other two participants in your group will see this circle marked on their screen.</li>
+        <li>When another participant in your group clicks on a circle on their screen, it will be marked on your screen in the color corresponding to that participant: orange for “Participant A”, blue for “Participant B”.</li>
+        <li>Clicking on an unmarked circle is like suggesting that division.</li>
+        <li>Clicking on a circle marked by another participant is like provisionally accepting the division they have suggested.
+            <ul>
+                <strong><li>The offer will only be really accepted and determine the number of points earned in that round if neither you nor the other participant clicks elsewhere in the following 10 seconds.</li>
+                <li>The offer will be accepted immediately.</li></strong>
+            </ul>
+        </li>
+        <li>When another participant clicks on a circle you have marked, they have provisionally accepted the division you have suggested. Again, your offer will only be really accepted and determine the number of points earned in that round if neither you nor the other participant clicks elsewhere in the following 10 seconds.</li>
+        <li>When there is a provisional agreement in place, <strong> a red circle </strong> will appear in the appropriate circle.</li>
+        <li>When there is a provisional agreement in place, a clock will start counting down <strong> “Time until agreement” from 10 seconds </strong> to let you know when it will be really accepted if neither participant clicks elsewhere. You can see this shown in red on the picture at the end
+of these instructions.</li>
+        <li>For the division to be implemented <strong> at least two of the three group members must arrive at an agreement. </strong></li>
+        <li> Try clicking a button "Your Screen" down below to see how it appears on other screens</li>
+
+    </ul>
+
+    <div class="parentcontainer">
+        <div class="screen">
+            <div class="screen-header">Your Screen</div>
+            <div id="triangleContainerYou" class="triangle-container">
+                <div class="inner-container">
+                    <div id="triangleYou"></div>
+                    <!-- <div class="corner-label top-left">Participant A</div>
+                    <div class="corner-label top-right">Participant B</div>
+                    <div class="corner-label bottom">You</div> -->
+                </div>
+            </div>
+        </div>
+       
+        <div class="screen">
+            <div class="inactive">
+            <div class="screen-header">Participant A's Screen</div>
+            
+            <div id="triangleContainerA" class="triangle-container">
+                <div class="inner-container">
+                    <div id="triangleA"></div>
+                    <!-- <div class="corner-label top-left">Participant A</div>
+                    <div class="corner-label top-right">Participant B</div>
+                    <div class="corner-label bottom">You</div> -->
+                </div>
+            </div>
+        </div>
+        </div>
+   
+        <div class="screen">
+            <div class="inactive">
+            <div class="screen-header">Participant B's Screen</div>
+            <div id="triangleContainerB" class="triangle-container">
+                <div class="inner-container">
+                    <div id="triangleB"></div>
+                    <!-- <div class="corner-label top-left">Participant A</div>
+                    <div class="corner-label top-right">Participant B</div>
+                    <div class="corner-label bottom">You</div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    <h2>THE VALUE OF POINTS, TIME LIMITS and ROUND EARNINGS</h2>
+    <ul>
+        <li><strong>At the start of each round, each point will be worth €3.</strong> Thus, at the start of each round, you have 12 points to divide within your group.</li>
+        <li>The value of the points will decrease throughout the round. In particular, <strong>a point will be worth €0.02 (2 cents) less in each second.</strong> For example, after 20 seconds pass since the beginning of a round, each point will be worth €2.60.</li>
+        <li>The exchange rate of points to euros at a given point in time will be shown at the top left side of the screen. You can see this in the picture at the end of these instructions.</li>
+        <li><strong>The round will end, when an agreement is reached or when the exchange rate reaches €0.</strong> If there is no agreement after the exchange rate has reached €0 per point, the round will end, and no one will receive any points.</li>
+        <li><strong>If the agreement is finalized, your earnings for a particular round will be determined by the number of points allocated to you in that round and the exchange rate at the time when the agreement is confirmed:</strong></li>
+    </ul>
+
+    <h2>DO NOT CLICK “Move to stage 2” JUST YET!</h2>
+    <ul>
+        <li>When you click “Move to stage 2” two things will happen:
+            <ul>
+                <li>Two circles, one blue and one orange, will appear on random circles in the triangle. These are what it looks like when the participants you are interacting with click on their triangle, but the locations of these circles have been chosen by the computer at random. You will not be interacting with real participants for now.</li>
+                <li>The clock will start and the exchange rate of points to euros will start to decrease. Don’t worry! The points received in this tutorial will not affect how much money you earn in this experiment. Also, you can repeat this part of the tutorial as many times as you like.</li>
+            </ul>
+        </li>
+        <li>There will be only two differences between Stage 2 of the tutorial and the real interactions:
+            <ul>
+                <li>In the tutorial rounds the points you receive will not affect how much money you earn.</li>
+                <li>In the real interactions the blue and orange circles may move as the participants you are interacting with click on different circles on their triangles.</li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<br>
+
+
+
+<script>
+window.buttonStates = {};
+window.selectedButton = null; 
+window.selectedButtonA = null;
+window.selectedButtonB = null; 
+
+document.addEventListener('DOMContentLoaded', function() {
+    const configurations = [
+        { containerId: 'triangleYou', originPanel: 'You', panelId: 1 },
+        { containerId: 'triangleA', originPanel: 'Participant A', panelId: 2 },
+        { containerId: 'triangleB', originPanel: 'Participant B', panelId: 3 }
+    ];
+
+    configurations.forEach(config => {
+        generateTriangle(config.containerId, 12, 15, config.originPanel, config.panelId);
+    });
+});
+
+function generateTriangle(containerId, n, points, originPanel, panelId) {
+    const container = document.getElementById(containerId);
+    const numRows = Math.floor(Math.sqrt(2 * n + 0.25) - 0.5);
+    var bottomP = 0;
+    const mappings = {
+        1: (bottomP, leftP, rightP) => ({ bottomP, leftP, rightP }),
+        2: (bottomP, leftP, rightP) => ({ bottomP, leftP, rightP }),
+        3: (bottomP, leftP, rightP) => ({ bottomP, leftP, rightP })
+    };
+
+    for (var rowNum = numRows; rowNum >= 1; rowNum--) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'triangle-row';
+        var leftP = rowNum - 1;
+        var rightP = 0;
+        const scalingFactor = points / (numRows - 1);
+
+        for (var buttonNum = 1; buttonNum <= rowNum; buttonNum++) {
+            const button = document.createElement('button');
+            const { bottomP: rawBottomP, leftP: rawLeftP, rightP: rawRightP } = mappings[panelId](bottomP, leftP, rightP);
+            const scaledBottomP = formatCoordinate(rawBottomP * scalingFactor);
+            const scaledLeftP = formatCoordinate(rawLeftP * scalingFactor);
+            const scaledRightP = formatCoordinate(rawRightP * scalingFactor);
+            const buttonId = `${containerId}_${scaledBottomP}_${scaledLeftP}_${scaledRightP}`;
+            button.dataset.coords = `(${scaledBottomP},${scaledLeftP},${scaledRightP})`;
+            window.buttonStates[buttonId] = [];
+
+            button.id = buttonId;
+            button.className = 'button';
+            button.type = 'button';
+            if (panelId !== 1) {
+                button.disabled = true; // disable buttons in panels 2 and 3
+            }
+            rowDiv.appendChild(button);
+
+            if (panelId === 1) {
+                button.addEventListener('click', function(e) {
+                    handleButtonClick(e.target.id, originPanel, panelId);
+                });
+            }
+            window.buttonStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
+
+            leftP--;
+            rightP++;
+        }
+        container.appendChild(rowDiv);
+        bottomP++;
+        leftP = rowNum - 2;
+        rightP = 0;
+    }
+}
+
+function handleButtonClick(buttonId, originPanel, panelId) {
+    if (window.selectedButton !== buttonId) {
+        if (window.selectedButton) {
+            document.getElementById(window.selectedButton).classList.remove('activeYou');
+        }
+
+        if (window.selectedButtonA) {
+            document.getElementById(window.selectedButtonA).classList.remove('activeA');
+        }
+
+        if (window.selectedButtonB) {
+            document.getElementById(window.selectedButtonB).classList.remove('activeB');
+        }
+
+        document.getElementById(buttonId).classList.add('activeYou');
+        window.selectedButton = buttonId;
+
+        const [participantA_button, participantB_button] = transformCoordinates(buttonId.split('_').slice(1).join('_'));
+        window.selectedButtonA = `triangleA_${participantA_button}`;
+        window.selectedButtonB = `triangleB_${participantB_button}`;
+
+        document.getElementById(window.selectedButtonA).classList.add('activeA');
+        document.getElementById(window.selectedButtonB).classList.add('activeB');
+
+        liveSend({
+            button_clicked: true,
+            button_id: buttonId,
+            origin_panel: originPanel,
+            panel_id: panelId
+        });
+    } else {
+        document.getElementById(buttonId).classList.remove('activeYou');
+        window.selectedButton = null;
+
+        const [participantA_button, participantB_button] = transformCoordinates(buttonId.split('_').slice(1).join('_'));
+        document.getElementById(`triangleA_${participantA_button}`).classList.remove('activeA');
+        document.getElementById(`triangleB_${participantB_button}`).classList.remove('activeB');
+        window.selectedButtonA = null;
+        window.selectedButtonB = null;
+
+        liveSend({
+            button_clicked: false,
+            button_id: buttonId,
+            origin_panel: originPanel,
+            panel_id: panelId
+        });
+    }
+}
+
+function formatCoordinate(value) {
+    if (Math.floor(value) !== value) {
+        return value.toFixed(1); 
+    }
+    return value; 
+}
+
+function liveRecv(data) {
+    console.log("hi");
+    console.log(data);
+
+    var fullButtonId = data['button_id'];
+    var coordStr = fullButtonId.split('_').slice(1).join('_');
+
+    const [participantA_button, participantB_button] = transformCoordinates(coordStr);
+    console.log(`Transformed coordinates: ${participantA_button}, ${participantB_button}`);
+
+    var buttonYou = document.getElementById(fullButtonId);
+    var buttonA = document.getElementById(`triangleA_${participantA_button}`);
+    var buttonB = document.getElementById(`triangleB_${participantB_button}`);
+
+    // Clear previous selection
+    if (buttonYou && !data['button_clicked']) {
+        buttonYou.classList.remove('activeYou');
+    } else if (buttonYou) {
+        buttonYou.classList.add('activeYou');
+    }
+
+    if (buttonA && !data['button_clicked']) {
+        buttonA.classList.remove('activeA');
+    } else if (buttonA) {
+        buttonA.classList.add('activeA');
+    }
+
+    if (buttonB && !data['button_clicked']) {
+        buttonB.classList.remove('activeB');
+    } else if (buttonB) {
+        buttonB.classList.add('activeB');
+    }
+}
+
+function transformCoordinates(coordStr) {
+    const coords = coordStr.split('_');
+    const [a, b, c] = coords.map(Number);
+
+    const newCoord2 = `${c}_${a}_${b}`;
+    const newCoord1 = `${b}_${c}_${a}`;
+
+    return [newCoord1, newCoord2];
+}
+</script>
+<style>
+    .inactive{
+        background-color: lightgrey;
+        opacity: 0.6;
+    }
+
+    .screen {
+        position: relative;
+        width: 100%;
+        margin: 5px;
+        border: 2px solid #000;
+        border-radius: 15px;
+        background: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+    
+    .screen-header {
+        background: #333;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        font-size: 16px;
+    }
+    
+    .triangle-container {
+        display: inline-block;
+        width: 100%;
+        margin: 0 auto;
+    }
+    
+    .parentcontainer {
+        display: flex;
+        justify-content: space-evenly;
+        width: 100%;
+    }
+    
+    .inner-container {
+        padding: 20px;
+        border: 1px solid white;
+    }
+    
+    .triangle-row {
+        display: flex;
+        justify-content: center;
+    }
+    
+    .button {
+        width: 30px;
+        height: 30px;
+        margin: 2px;
+        border-radius: 15px;
+        border: 1px solid black;
+    }
+    
+    .button.activeYou {
+        border: none;
+        box-shadow: 0 0 0 2px green; 
+    }
+
+    .button.activeA {
+        border: none;
+        box-shadow: 0 0 0 2px red; 
+    }
+    .button.activeB{
+        border: none;
+        box-shadow: 0 0 0 2px blue; 
+    }
+</style>
+
+<h4>CLICK ON “Move to stage 2” and complete the exercises</h4>
+<br>
+<button name="begin"><h1>Move to stage 2</h1></button>
+{{ endblock }}
