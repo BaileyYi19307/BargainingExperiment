@@ -59,8 +59,8 @@
 
     // configuration settings for game
     var config = {
-        totalNodes: 12,              // Number of nodes in the triangle
-        totalPoints: 15,             // Total points to distribute
+        totalNodes: 36,              // Number of nodes in the triangle
+        totalPoints: 12,             // Total points to distribute
         initialCurrencyValue: 3.00,  // Starting currency value
         ratificationTime: 3          // Time for ratification/agreement countdown
     };
@@ -292,7 +292,7 @@
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     // LIVE DATA HANDLING AND BUTTON CLICKING
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    let lastClickedButton = null; // Initialize globally
+    let lastClickedButtonId = null; // Initialize globally
 
         function liveRecv(data) { //data received includes the buttonId and the participant who clicked it
             var button = document.getElementById(data.button_id);
@@ -308,7 +308,7 @@
             updateButtonAppearance(button, btnState);
             monitorClickAgreement(button.id);
 
-            lastClickedButton = button.id;
+            lastClickedButtonId = button.id;
 
             //if player who clicked the button is current player
             //update displayed points
