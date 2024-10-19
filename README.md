@@ -49,3 +49,10 @@ pip install otree
 
 ## Additional Notes
 Make sure to configure the settings in both experiments as needed before running the experiments. If you want to switch between running the **Main Experiment** and the **Tutorial Experiment**, make sure to `cd` to the appropriate directory.
+
+## License
+
+This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License (CC BY-NC-ND 4.0) - see the [LICENSE](LICENSE) file for details.
+
+You may not modify or distribute this work without permission from Professor Andrzej Baranski.
+
