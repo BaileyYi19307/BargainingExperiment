@@ -9,7 +9,7 @@ This repository contains the code for running a bargaining experiment using oTre
 To get started, clone the repository to your local machine:
 
 git clone https://github.com/BaileyYi19307/OtreeBargainingExperiment.git
-```
+
 
 ### 2. Running the Main Experiment
 1. Navigate to the **MainExperiment** directory:
