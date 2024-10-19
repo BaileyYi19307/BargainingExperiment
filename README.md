@@ -1,5 +1,4 @@
 
-```markdown
 # oTree Bargaining Experiment
 
 This repository contains the code for running a bargaining experiment using oTree. The project consists of two parts: the **Main Experiment** and the **Tutorial Experiment**.
