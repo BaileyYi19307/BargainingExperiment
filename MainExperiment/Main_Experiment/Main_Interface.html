@@ -52,6 +52,12 @@
 
 <script>
 
+    //as soon as DOM content is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        // Request the backend to send compulsory offer data
+        liveSend({ send_compulsory_data: true });
+    });
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // CONFIGURATION
@@ -80,7 +86,9 @@
 
     // when the document is fully loaded, initialize the game setup
         document.addEventListener('DOMContentLoaded', function() {
+            console.time("generateTriangle");
             generateTriangle(config.totalNodes, config.totalPoints);
+            console.timeEnd("generateTriangle");
             positionCornerLabels();
             startDecay();
         });
@@ -294,31 +302,41 @@
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     let lastClickedButtonId = null; // Initialize globally
 
-        function liveRecv(data) { //data received includes the buttonId and the participant who clicked it
-            var button = document.getElementById(data.button_id);
-            var btnState = buttonClickStates[data.button_id];
+    function handleSimulatedClick(click) {
+    console.log("The click is",click)
+    const button = document.getElementById(click.button_id);
+    if (button) {
+        console.log(`Simulating click for button ${click.button_id} by Player ${click.clicked_by}`);
+        const btnState = buttonClickStates[click.button_id] || {};
+        btnState[`clickedByUser${click.clicked_by}`] = true;
+        updateButtonAppearance(button, btnState);
+    }
+}
 
-            //update state base on the player who clicked it
-            updatePlayerClickState(btnState,data.player_id);
+function handleRealClick(data) {
+    const button = document.getElementById(data.button_id);
+    const btnState = buttonClickStates[data.button_id];
+    updatePlayerClickState(btnState, data.player_id);
+    resetOtherButtonState(data.button_id, data.player_id);
+    updateButtonAppearance(button, btnState);
+    monitorClickAgreement(button.id);
+    lastClickedButtonId = button.id;
 
-            //reset state for other buttons clicked by the same player
-            resetOtherButtonState(data.button_id, data.player_id);
+    if (data.player_id === playerId) {
+        updateDisplayedPoints(data.button_id);
+    }
+    updatePayoffs();
+}
 
-            //update button appearance and game states
-            updateButtonAppearance(button, btnState);
-            monitorClickAgreement(button.id);
-
-            lastClickedButtonId = button.id;
-
-            //if player who clicked the button is current player
-            //update displayed points
-            if (data.player_id === playerId) {
-                updateDisplayedPoints(data.button_id);
-            }
-            //send updated payoffs to server
-            updatePayoffs();
-
-        }
+function liveRecv(data) {
+    if (data.simulated_clicks) {
+        console.log("handling Simulated clicks");
+        data.simulated_clicks.forEach(handleSimulatedClick);
+    }
+    if (data.button_id && data.player_id) {
+        handleRealClick(data);
+    }
+}
 
 
     //handle button clicks

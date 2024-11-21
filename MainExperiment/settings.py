@@ -8,6 +8,9 @@ SESSION_CONFIGS = [
         display_name="show one button",
         app_sequence=['Main_Experiment'],
         num_demo_participants=3,
+        random_proposer_treatment=False,  # Enable random proposer mode
+        compulsory_offer_treatment=True,  # Enable compulsory offer
+
     )
 ]
 
@@ -20,8 +23,8 @@ SESSION_CONFIG_DEFAULTS = dict(
     real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
 )
 
-PARTICIPANT_FIELDS = []
-SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime']
+PARTICIPANT_FIELDS = ['expiry']
+SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whatButtonsClicked']
 
 # ISO-639 code
 # for example: de, fr, ja, ko, zh-hans

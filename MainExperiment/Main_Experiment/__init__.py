@@ -1,6 +1,8 @@
 from otree.api import *
 import json
 import random
+import time
+
 
 
 doc = """
@@ -31,6 +33,9 @@ class Subsession(BaseSubsession):
 
         for player in self.get_players():
             player.round_payoffs = json.dumps({})
+    
+        self.session.vars['enable_compulsory_offer'] = self.session.config.get('enable_compulsory_offer', False)
+
 
 
     def group_fixed(self):
@@ -49,6 +54,8 @@ class Player(BasePlayer):
     custom_round_num = models.IntegerField(initial=1)
     round_payoffs = models.LongStringField(initial='{}')
     question_6_bonus = models.CurrencyField(initial = 1) #changeable question 6 variable
+    countDownStarted = models.BooleanField(initial=False)  # Add this line for countdown tracking
+
 
     # Question 5
     noticed_icons = models.StringField(
@@ -186,14 +193,36 @@ class Report(ExtraModel):
     P3_Agree=models.IntegerField(initial=0)
     NumInAgreement = models.IntegerField()
     Timestamp = models.StringField()
-    Time_Since_Round_Start= models.FloatField()
+    Time_Since_Round_Start = models.FloatField()
+    Compulsory_offer = models.IntegerField()  # Add this field
+    Button_ID = models.StringField()
 
 class Main_Interface(Page):
+    @staticmethod
+    def vars_for_template(player):
+        session = player.session
+        # retrieve the stored compulsory offer data
+        compulsory_offer_data = session.vars.get('whatButtonsClicked', {})
+
+
     @staticmethod
     def live_method(player, data):
         session = player.session
         g = player.group
 
+        #return compulsory data 
+        if 'send_compulsory_data' in data:
+            print("compulsory data in data")
+            compulsory_offer_data = session.vars.get('whatButtonsClicked', {})
+            simulated_clicks = [
+                {
+                    'button_id': button_id,
+                    'clicked_by': player_id
+                }
+                for player_id, button_id in compulsory_offer_data.items()
+            ]
+            return {0: {'simulated_clicks': simulated_clicks}}
+        
         # handle timer start
         if 'timerStarted' in data:
             session.vars['beginningTime'] = float(data['timerStarted'])
@@ -227,6 +256,7 @@ class Main_Interface(Page):
         # handle payoffs
         if 'payoffs' in data:
             player_id = data['payoffs']['player_id']
+            
             if player_id == g.previousClicker:
                 g.previousClicker = player_id
                 time_since = float(data['payoffs']['time_since']) 
@@ -235,6 +265,7 @@ class Main_Interface(Page):
                 p1_agree = int("clickedByUser1" in who_agrees)
                 p2_agree = int("clickedByUser2" in who_agrees)
                 p3_agree = int("clickedByUser3" in who_agrees)
+                print(f"[Main Experiment] Current agreement state (who_agrees): {who_agrees}")
 
                 # create report entry
                 Report.create(
@@ -251,6 +282,7 @@ class Main_Interface(Page):
                     P3_Agree=p3_agree,
                     NumInAgreement=len(who_agrees),
                     Timestamp=data['payoffs']['timestamp'],
+                    Compulsory_offer=0,
                     Time_Since_Round_Start=since_beginning
                 )
 
@@ -274,12 +306,24 @@ class Main_Interface(Page):
 
         # handle button click event
         if 'button_clicked' in data:
+
+            current_button = data['button_id']
+            player_id = player.id_in_group
+
             return {0: {'button_id': data["button_id"], 'player_id': player.id_in_group}}
 
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
         player.custom_round_num += 1
+
+        
+
+class Round_Payoffs(Page):
+    @staticmethod
+    def live_method(player: Player, data: dict):
+        if data.get('next_clicked'):
+            return {player.id_in_group: 'next'}
 
 class Round_Payoffs(Page):
     @staticmethod
@@ -304,6 +348,162 @@ class Questionnaire(Page):
 
 
 
+class CompulsoryOffer(Page):
+
+    @staticmethod
+    def before_next_page(player,timeout_happened):
+        session = player.session
+        print("The buttons clicked during the compulsory offer round were:")
+        print(session.vars['whatButtonsClicked'])
+        session.vars['main_experiment_start_time'] = time.time()
+        
+
+    @staticmethod
+    def live_method(player, data):
+        session = player.session
+        g = player.group
+
+
+        # track previous clicker
+        if 'participants' in data:
+            print("3) tracked previous clicker to be",data['participants'])
+            g.previousClicker = data['participants']
+
+        # track active participants in agreement
+        if 'activeParticipants' in data:
+            active_participants = data['activeParticipants']
+            print(f"[Compulsory Experiment] Active partcipants are: {who_agrees}")
+
+
+        session.vars.setdefault('who_in_agreement', [])
+        who_agrees = session.vars['who_in_agreement']
+        num_agree = len(who_agrees)
+        session.vars['numAgree'] = num_agree
+
+        # handle agreement logic
+        if 'numInAgreement' in data:
+            if data['numInAgreement'] < 2:
+                if num_agree >= 2 and any(participant in who_agrees for participant in active_participants):
+                    who_agrees.clear()
+                else:
+                    who_agrees.clear()
+                    who_agrees.extend(active_participants)
+            else:
+                who_agrees.clear()
+                who_agrees.extend(active_participants)
+                session.vars['numAgree'] = len(who_agrees)
+
+
+        # handle payoffs
+        if 'payoffs' in data:
+            print("payofs is IN THE DATA!!!!!")
+            print(data)
+            player_id = data['payoffs']['player_id']
+            if player_id == g.previousClicker:
+                g.previousClicker = player_id
+                time_since = float(data['payoffs']['time_since']) 
+                currency_decay = data['payoffs']['currency_decay'] 
+
+                p1_agree = int("clickedByUser1" in who_agrees)
+                p2_agree = int("clickedByUser2" in who_agrees)
+                p3_agree = int("clickedByUser3" in who_agrees)
+                print(f"[Compulsory Experiment] Current agreement state (who_agrees): {who_agrees}")
+
+                # create report entry
+                Report.create(
+                    Session_Code=g.session.code,
+                    Subject_ID=player.participant.code,
+                    Group_Num=g.id,
+                    Round_Num=player.custom_round_num,
+                    SubGroup_ID=player_id,
+                    S1_Points=data['payoffs']['p1_points'], 
+                    S2_Points=data['payoffs']['p2_points'], 
+                    S3_Points=data['payoffs']['p3_points'],  
+                    P1_Agree=p1_agree,
+                    P2_Agree=p2_agree,
+                    P3_Agree=p3_agree,
+                    NumInAgreement=len(who_agrees),
+                    Compulsory_offer=1,
+                    Timestamp=data['payoffs']['timestamp'],
+                )
+
+                # update payoffs and currency for each player
+                for player_id in [1, 2, 3]:
+                    p = g.get_player_by_id(player_id)
+                    p_payoff = data['payoffs'].get(f'p{player_id}_points', 0) 
+                    p.payoff = p_payoff
+                    p.currency = round(p_payoff * currency_decay, 2)
+                    p.ogCurrency = p_payoff * 3.00
+
+                # store round payoffs
+                round_num = player.round_number
+                round_payoffs = json.loads(player.round_payoffs)
+                round_payoffs[str(round_num)] = {
+                    'payoff': float(player.payoff),
+                    'ogCurrency': float(player.ogCurrency),
+                    'currency': float(player.currency)
+                }
+                player.round_payoffs = json.dumps(round_payoffs)
+        # check how many players have clicked so far
+        # if all players have clicked, then send back all Player's clicked
+
+        # In the live method, adjust the handling of the button clicks:
+        if 'button_clicked' in data:
+            current_time = time.time()
+            time_since_start = current_time - session.vars.get('compulsory_offer_start_time', current_time)
+            player_id = player.id_in_group
+
+
+            current_button = data['button_id']
+
+            session.vars.setdefault('playersClicking', [])
+            who_clicked = session.vars['playersClicking']
+
+            session.vars.setdefault('whatButtonsClicked',{})
+            #update what button clicked
+            session.vars['whatButtonsClicked'][player.id_in_group]=current_button
+
+            # Add the current player to the list if they haven't clicked yet
+            if player.id_in_group not in who_clicked:
+                who_clicked.append(player.id_in_group)
+
+            # Store button click state for the player (store the clicked button)
+            session.vars.setdefault(f'player_{player.id_in_group}_click', data['button_id'])
+
+
+            # Check if all players have clicked
+            allPlayersClicked = len(who_clicked) == 3
+
+            if allPlayersClicked:
+                print("ALL PLAYERS HAVE CLICKED")
+
+                #if the random proposer treatment is on
+                if session.config.get('random_proposer_treatment', False):
+                    # Randomly select one button to display as the "random proposer"
+                    if 'selected_button' not in session.vars:
+                        selected_player_id = random.choice(list(session.vars['whatButtonsClicked'].keys()))
+                        selected_button = session.vars['whatButtonsClicked'][selected_player_id]
+                        session.vars['selected_button'] = {
+                            'button_id': selected_button,
+                            'player_id': selected_player_id,
+                        }
+                    # Return the selected button and notify all players
+                        print('selected button is',)
+                        return {
+                            0: {
+                                'selected_button': session.vars['selected_button']['button_id'],
+                                'selected_player': session.vars['selected_button']['player_id'],
+                                'players_info': session.vars['whatButtonsClicked'],
+                                'allPlayersClicked': True,
+                            }
+                        }
+                #otherwise, just let everyone know which buttons clicked
+                return {0: {'button_id': data['button_id'], 'player_id': player.id_in_group, 'players_info': session.vars['whatButtonsClicked'],'allPlayersClicked':allPlayersClicked}}
+            
+            print("4) returning button_id",data['button_id'],"clicked by",player.id_in_group,"with",session.vars['whatButtonsClicked'],"and if all players clicked or not",allPlayersClicked)
+            # Otherwise, return only the current player's click info
+            return {0: {'button_id': data['button_id'], 'player_id': player.id_in_group, 'players_info': session.vars['whatButtonsClicked'],'allPlayersClicked':allPlayersClicked}}
+
 class Experiment_End(Page):
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -322,7 +522,9 @@ class Experiment_End(Page):
         }
 
 
-page_sequence = [WaitingRoom, Main_Interface, Round_Payoffs] * totalRounds + [Questionnaire, Experiment_End]
+
+
+page_sequence = [WaitingRoom,CompulsoryOffer, Main_Interface, Round_Payoffs] * totalRounds + [Questionnaire, Experiment_End]
 
 print(f"Total pages: {len(page_sequence)}")
 for i, page in enumerate(page_sequence):
@@ -330,7 +532,7 @@ for i, page in enumerate(page_sequence):
 
 
 def custom_export(players):
-    yield ['Session_Code','Subject_ID', 'Group_Num', 'Round_Num', 'SubGroup_ID', 'S1_Points', 'S2_Points', 'S3_Points','P1_Agree','P2_Agree','P3_Agree', 'NumInAgreement', 'Timestamp','Time_Since_Round_Start']
+    yield ['Session_Code','Subject_ID', 'Group_Num', 'Round_Num', 'SubGroup_ID', 'S1_Points', 'S2_Points', 'S3_Points','P1_Agree','P2_Agree','P3_Agree', 'NumInAgreement', 'Timestamp','Compulsory_offer','Time_Since_Round_Start']
     reports = Report.filter()
     for report_no in range(len(reports)):
         yield [
@@ -347,6 +549,7 @@ def custom_export(players):
             reports[report_no].P3_Agree,
             reports[report_no].NumInAgreement,
             reports[report_no].Timestamp,
+            reports[report_no].Compulsory_offer,
             reports[report_no].Time_Since_Round_Start
         ]
     for report in reports:
