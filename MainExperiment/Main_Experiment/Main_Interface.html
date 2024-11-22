@@ -68,7 +68,7 @@
         totalNodes: 36,              // Number of nodes in the triangle
         totalPoints: 12,             // Total points to distribute
         initialCurrencyValue: 3.00,  // Starting currency value
-        ratificationTime: 3          // Time for ratification/agreement countdown
+        ratificationTime: 10         // Time for ratification/agreement countdown
     };
 
     // track which buttons have been clicked and by who
@@ -301,6 +301,8 @@
     // LIVE DATA HANDLING AND BUTTON CLICKING
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     let lastClickedButtonId = null; // Initialize globally
+    let deselectedButtonId = null; // Tracks the last deselected button
+
 
     function handleSimulatedClick(click) {
     console.log("The click is",click)
@@ -310,6 +312,7 @@
         const btnState = buttonClickStates[click.button_id] || {};
         btnState[`clickedByUser${click.clicked_by}`] = true;
         updateButtonAppearance(button, btnState);
+        monitorClickAgreement(click.button_id);
     }
 }
 
@@ -329,7 +332,7 @@ function handleRealClick(data) {
     if (data.player_id === playerId) {
         updateDisplayedPoints(data.button_id);
     }
-    updatePayoffs();
+    updatePayoffs(data.button_id);
 }
 
 function liveRecv(data) {
@@ -347,6 +350,9 @@ function liveRecv(data) {
 
     //handle button clicks
     function handleButtonClick(buttonId) {
+          if (buttonId !== deselectedButtonId) {
+            deselectedButtonId = null;
+        }
             liveSend({
                 button_clicked: true,
                 button_id:buttonId,
@@ -357,25 +363,31 @@ function liveRecv(data) {
         }
 
 
-        // detect clicks outside of buttons
         document.addEventListener('click', function(event) {
-            const allButtons = document.querySelectorAll('.button');
-            const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
+    const allButtons = document.querySelectorAll('.button');
+    const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
 
-            console.log('clicked on button:', clickedOnButton);
+    console.log('Clicked on button:', clickedOnButton);
 
-            // deselect the last clicked button if the click was outside
-            if (!clickedOnButton && lastClickedButtonId) {
-                liveSend({
-                    button_clicked: false,
-                    button_id: lastClickedButtonId,
-                    participants: playerId
-                });
+    // Handle clicks outside buttons
+    if (!clickedOnButton && lastClickedButtonId) {
+        if (deselectedButtonId !== lastClickedButtonId) {
+            console.log('Deselecting button:', lastClickedButtonId);
 
-                console.log('deselecting button:', lastClickedButtonId);
-                lastClickedButtonId = null;
-            }
-        });
+            // Notify the server
+            liveSend({
+                button_clicked: false,
+                button_id: lastClickedButtonId,
+                participants: playerId
+            });
+
+            // Update deselection state
+            deselectedButtonId = lastClickedButtonId;
+            lastClickedButtonId = null;
+        }
+    }
+});
+
 
 
         let agreementButtonID = null;  // tracks the button currently in agreement
@@ -457,33 +469,66 @@ function liveRecv(data) {
 
 
         //updates and sends current payoffs and game data to the server
-        function updatePayoffs() {
-            // Get payoff values from the input fields
-            const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
-            const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
-            const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
+  
+  // Updates and sends current payoffs and game data to the server
+  function updatePayoffs(button_id) {
+      try {
+          // Debug: Log function entry
+          console.log("Entering updatePayoffs with button_id:", button_id);
 
-            //get current exchange rate
-            const currentExchangeRate = parseFloat(document.getElementById('euValue').textContent);
+        // Extract numeric values from the button_id (e.g., 'btn10_20_30' -> [10, 20, 30])
+          const values = button_id.replace('btn', '').split('_').map(Number);
 
-            //current time
-            var currentTime = new Date();
+          if (values.length !== 3) {
+              throw new Error(`Invalid button_id format: ${button_id}`);
+          }
 
-            console.log("Updating payoffs", { payoff1, payoff2, payoff3, currentExchangeRate });
+          // Assign extracted values to payoff variables
+          const [payoff1, payoff2, payoff3] = values;
 
-            // Send the new payoffs to the server and additional info for tracking
-            liveSend({
-                payoffs: {
-                    p1_points: payoff1,
-                    p2_points: payoff2,
-                    p3_points: payoff3,
-                    currency_decay: currentExchangeRate,
-                    player_id: playerId,
-                    timestamp: currentTime.toISOString(),
-                    time_since: Date.now()
-                }
-            });
-        }
+          // Debug: Log extracted payoffs
+          console.log("Extracted payoffs from button_id:", { payoff1, payoff2, payoff3 });
+
+
+          // // Retrieve and parse the current exchange rate
+          const currentExchangeRate = parseFloat(document.getElementById('euValue').textContent);
+
+          // Debug: Log exchange rate
+          console.log("Retrieved exchange rate:", currentExchangeRate);
+
+          // Get the current time
+          const currentTime = new Date();
+
+          // Debug: Log current time
+          console.log("Current time:", currentTime.toISOString());
+
+          // Prepare data to send
+          const dataToSend = {
+              payoffs: {
+                  p1_points: payoff1,
+                  p2_points: payoff2,
+                  p3_points: payoff3,
+                  currency_decay: currentExchangeRate,
+                  player_id: playerId,
+                  timestamp: currentTime.toISOString(),
+                  time_since: Date.now(),
+                  button_id: button_id
+              }
+          };
+
+          // Debug: Log the data to be sent
+          console.log("Data prepared for liveSend:", JSON.stringify(dataToSend, null, 2));
+
+          // Send the data to the server
+          liveSend(dataToSend);
+
+          // Debug: Confirm send
+          console.log("Data sent successfully.");
+      } catch (error) {
+          // Debug: Log any errors that occur
+          console.error("Error in updatePayoffs:", error);
+      }
+  }
 
         // updates the displayed points for players P1, P2, and P3 based on the clicked button
         function updateDisplayedPoints(buttonId) {

@@ -493,15 +493,6 @@
           // Debug: Log function entry
           console.log("Entering updatePayoffs with button_id:", button_id);
 
-          // // Retrieve and parse payoff values
-          // const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
-          // const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
-          // const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
-
-          // // Debug: Log payoff values
-          // console.log("Retrieved payoff values:", { payoff1, payoff2, payoff3 });
-
-
         // Extract numeric values from the button_id (e.g., 'btn10_20_30' -> [10, 20, 30])
           const values = button_id.replace('btn', '').split('_').map(Number);
 
@@ -706,6 +697,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+
   }
 
   .icon1,

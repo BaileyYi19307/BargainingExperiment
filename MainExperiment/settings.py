@@ -8,7 +8,7 @@ SESSION_CONFIGS = [
         display_name="show one button",
         app_sequence=['Main_Experiment'],
         num_demo_participants=3,
-        random_proposer_treatment=True,  # Enable random proposer mode
+        random_proposer_treatment=False,  # Enable random proposer mode
         compulsory_offer_treatment=True,  # Enable compulsory offer
 
     )

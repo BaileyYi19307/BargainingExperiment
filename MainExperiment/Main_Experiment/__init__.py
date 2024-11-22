@@ -238,6 +238,7 @@ class Main_Interface(Page):
         # track active participants in agreement
         if 'activeParticipants' in data:
             active_participants = data['activeParticipants']
+            print("These are the active_participants",active_participants)
 
         session.vars.setdefault('who_in_agreement', [])
         who_agrees = session.vars['who_in_agreement']
@@ -248,11 +249,14 @@ class Main_Interface(Page):
         if 'numInAgreement' in data:
             if data['numInAgreement'] < 2:
                 if num_agree >= 2 and any(participant in who_agrees for participant in active_participants):
+                    print("Star")
                     who_agrees.clear()
                 else:
+                    print("square")
                     who_agrees.clear()
                     who_agrees.extend(active_participants)
             else:
+                print("circle")
                 who_agrees.clear()
                 who_agrees.extend(active_participants)
                 session.vars['numAgree'] = len(who_agrees)
@@ -271,6 +275,7 @@ class Main_Interface(Page):
                 p2_agree = int("clickedByUser2" in who_agrees)
                 p3_agree = int("clickedByUser3" in who_agrees)
                 print(f"[Main Experiment] Current agreement state (who_agrees): {who_agrees}")
+                print("The current PAYYOFS HERE ARE ",data['payoffs'])
 
                 # create report entry
                 Report.create(
@@ -292,13 +297,14 @@ class Main_Interface(Page):
                     Time_Since_Round_Start=since_beginning
                 )
 
-                # update payoffs and currency for each player
                 for player_id in [1, 2, 3]:
                     p = g.get_player_by_id(player_id)
-                    p_payoff = data['payoffs'].get(f'p{player_id}_points', 0) 
-                    p.payoff = p_payoff
+                    p_payoff = data['payoffs'].get(f'p{player_id}_points', 0)
+
+                    # Round all calculations to two decimal places
+                    p.payoff = round(p_payoff, 2)
                     p.currency = round(p_payoff * currency_decay, 2)
-                    p.ogCurrency = p_payoff * 3.00
+                    p.ogCurrency = round(p_payoff * 3.00, 2)
 
                 # store round payoffs
                 round_num = player.round_number
