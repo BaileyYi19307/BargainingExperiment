@@ -227,11 +227,11 @@
 
         // maps values based on the player's perspective (Player 1: bottom, Player 2: left, Player 3: right)
         function mapValuesBasedOnPerspective(p1, p2, p3, playerId) {
-            const mappings = {
-                1: (p1, p2, p3) => ({ p1, p2, p3 }),
-                2: (p1, p2, p3) => ({ p1: p2, p2: p3, p3: p1 }),
-                3: (p1, p2, p3) => ({ p1: p3, p2: p1, p3: p2 })
-            };
+          const mappings = {
+                    1: (p1, p2, p3) => ({ p1, p2, p3 }),
+                    2: (p1, p2, p3) => ({ p1: p3, p2: p1, p3: p2 }), 
+                    3: (p1, p2, p3) => ({ p1: p2, p2: p3, p3: p1 }) 
+                };
 
             return mappings[playerId](p1, p2, p3);
         }
@@ -316,7 +316,11 @@
 function handleRealClick(data) {
     const button = document.getElementById(data.button_id);
     const btnState = buttonClickStates[data.button_id];
+    console.log("Before clickstates", window.buttonClickStates[data.button_id]);
+
     updatePlayerClickState(btnState, data.player_id);
+    console.log("After clickstates", window.buttonClickStates[data.button_id]);
+
     resetOtherButtonState(data.button_id, data.player_id);
     updateButtonAppearance(button, btnState);
     monitorClickAgreement(button.id);
@@ -329,11 +333,13 @@ function handleRealClick(data) {
 }
 
 function liveRecv(data) {
+    console.log("i'm in live rec")
     if (data.simulated_clicks) {
         console.log("handling Simulated clicks");
         data.simulated_clicks.forEach(handleSimulatedClick);
     }
     if (data.button_id && data.player_id) {
+        console.log("GONNA HANDLE REAL CLICK ON BUTTON",data.button_id);
         handleRealClick(data);
     }
 }

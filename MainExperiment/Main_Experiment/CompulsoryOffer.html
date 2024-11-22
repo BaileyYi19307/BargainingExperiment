@@ -1,797 +1,876 @@
-
 {{ block title }} {{ endblock }} {{ block content }}
 
-
 <div class="header-container">
-
-
-    <div class="currency-decay">1 EU = <span id="euValue">3.00</span></div>
-    <div class="timers-container">
-      <div id="agreement-timer">Time to Agreement:</div>
+  <div class="currency-decay">1 EU = <span id="euValue">3.00</span></div>
+  <div class="timers-container">
+    <div id="agreement-timer">Time to Agreement:</div>
+  </div>
+  <div class="values-container">
+    <div id="player-values">
+      P1: <span id="p1-value">__</span> P2: <span id="p2-value">__</span> P3:
+      <span id="p3-value">__</span>
     </div>
-    <div class="values-container">
-      <div id="player-values">
-        P1: <span id="p1-value">__</span> P2: <span id="p2-value">__</span> P3:
-        <span id="p3-value">__</span>
-      </div>
-      <div id="hover-values">
-        <span id="hover-p1-value">Participant A</span>
-        <span id="hover-p2-value">Participant B</span>
-        <span id="hover-p3-value">You</span>
-      </div>
+    <div id="hover-values">
+      <span id="hover-p1-value">Participant A</span>
+      <span id="hover-p2-value">Participant B</span>
+      <span id="hover-p3-value">You</span>
     </div>
   </div>
-  
-  <div class="parent-container">
-    <div id="triangleContainer">
-      <div class="corner-label top-left" id="participant2Label">
-        Participant A
-        <img
-          src="{{ static 'images/female_icon2.png' }}"
-          class="icon"
-          width="25"
-          height="35"
-        />
-      </div>
-      <div class="corner-label top-right" id="participant3Label">
-        Participant B
-        <img
-          src="{{ static 'images/female_icon2.png' }}"
-          class="icon"
-          width="25"
-          height="35"
-        />
-      </div>
-      <div class="corner-label bottom" id="youLabel">
-        <img
-          src="{{ static 'images/female_icon2.png' }}"
-          class="icon"
-          width="25"
-          height="35"
-        />
-        You
-      </div>
+</div>
+
+<div class="parent-container">
+  <div id="triangleContainer">
+    <div class="corner-label top-left" id="participant2Label">
+      Participant A
+      <img
+        src="{{ static 'images/female_icon2.png' }}"
+        class="icon"
+        width="25"
+        height="35"
+      />
+    </div>
+    <div class="corner-label top-right" id="participant3Label">
+      Participant B
+      <img
+        src="{{ static 'images/female_icon2.png' }}"
+        class="icon"
+        width="25"
+        height="35"
+      />
+    </div>
+    <div class="corner-label bottom" id="youLabel">
+      <img
+        src="{{ static 'images/female_icon2.png' }}"
+        class="icon"
+        width="25"
+        height="35"
+      />
+      You
     </div>
   </div>
-  
-  <script>
-  
-  
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      // CONFIGURATION
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
-      // configuration settings for game
-      var config = {
-          totalNodes: 36,              // Number of nodes in the triangle
-          totalPoints: 12,             // Total points to distribute
-          initialCurrencyValue: 3.00,  // Starting currency value
-          ratificationTime: 3          // Time for ratification/agreement countdown
-      };
-  
-      // track which buttons have been clicked and by who
-      window.buttonClickStates = {};
-  
-      // store the player's ID
-      window.playerId = {{ player.id_in_group }};
-  
-      // track the border color states for different actions
-      var borderColors = {
-          red: false,
-          blue: false,
-          green: false
-      };
-  
-      // when the document is fully loaded, initialize the game setup
-          document.addEventListener('DOMContentLoaded', function() {
-              generateTriangle(config.totalNodes, config.totalPoints);
-              positionCornerLabels();
-          });
-  
-  
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      //CODE TO INITIALIZE THE TRIANGLE
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
-          // function to generate triangle of n nodes
-          // points are divided equally
-          function generateTriangle(numOfCircles, totalPoints) {
-              const triangleContainer = document.getElementById('triangleContainer');
-              const numRows = Math.floor(Math.sqrt(2 * numOfCircles + 0.25) - 0.5);
-  
-              //scaling factor for converting unscaled points to scaled points
-              //i.e (0,3,0) *scaling factor of 5=> (0,15,0)
-              const scalingFactor = totalPoints / (numRows - 1);
-  
-              //generate each row of buttons for inverted triangle with "numRows" number of rows
-              for (let rowNum = numRows; rowNum >= 1; rowNum--) {
-  
-                  const numButtonsInRow=rowNum;
-                  const whichPlayerPerspective=playerId;
-  
-                  //generate a new row of buttons and append to the triangle
-                  let newRow=generateRow(rowNum, numButtonsInRow,whichPlayerPerspective,scalingFactor,numRows);
-                  triangleContainer.appendChild(newRow);
-              }
-          }
-  
-          //function to handle creating a row with multiple buttons
-          function generateRow(rowNum, numOfButtons,whichPlayerPerspective,scalingFactor,numRows){
-                  const rowDiv = document.createElement('div');
-                  rowDiv.className = 'triangle-row';
-  
-                  //for each button in the row
-                  for (let i=0; i<numOfButtons;i++){
-                      //calculate points for each player
-                      //Note: from player 1's perspective: player 1 is bottom player, player 2 is left, player 3 is right
-                      let unscaledPointsForPlayer1= numRows-rowNum;
-                      let unscaledPointsForPlayer2= rowNum-1-i;
-                      let unscaledPointsForPlayer3= i;
-  
-                      //scale points for each player
-                      let pointsForPlayer1=formatCoordinate(unscaledPointsForPlayer1*scalingFactor);
-                      let pointsForPlayer2=formatCoordinate(unscaledPointsForPlayer2*scalingFactor);
-                      let pointsForPlayer3=formatCoordinate(unscaledPointsForPlayer3*scalingFactor);
-  
-                      //generate a unique button and append to row
-                      let btn=generateButton(pointsForPlayer1,pointsForPlayer2,pointsForPlayer3,whichPlayerPerspective);
-                      rowDiv.appendChild(btn);
-                  }
-              //return the row once all the buttons have been appended
-              return rowDiv;
-          }
-  
-  
-          //handles the creation of a single button
-          function generateButton(p1,p2,p3, whichPlayerPerspective){
-  
-               //which player is it? depending on that, map the points correctly
-               const { p1: pointsForPlayer1, p2: pointsForPlayer2, p3: pointsForPlayer3 } = mapValuesBasedOnPerspective(p1, p2, p3, whichPlayerPerspective);
-  
-               //create button element and set attributes
-               const button = document.createElement('button');
-               button.className = 'button';
-               button.type = 'button';
-               const buttonId = `btn${pointsForPlayer1}_${pointsForPlayer2}_${pointsForPlayer3}`;
-               button.id = buttonId;
-               button.dataset.coords = `(${pointsForPlayer1},${pointsForPlayer2},${pointsForPlayer3})`; // Store coordinates in data attribute
-  
-               //for each button, we want to know who they've been clicked by
-               buttonClickStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
-  
-               //attach event listeners to the button
-               addButtonEventListeners(button);
-  
-               return button;
-          }
-  
-  
-          //function to attach event listeners to each newly created button
-          function addButtonEventListeners(button) {
-  
-              // event listener for button click
-              button.addEventListener('click', (event) => {
-                  console.log("1) handling button click for",event.target.id);
-                  handleButtonClick(event.target.id);
-              });
-  
-              // event listener for mouse hover
-              button.addEventListener('mouseenter', (event) => {
-                  // split the stored coordinates, clean them up, and convert them to numbers
-                  const hoverValues = event.target.dataset.coords.split(',').map(coord => coord.trim().replace(/[()]/g, '')).map(Number);
-                  const [p1, p2, p3] = hoverValues;
-  
-                  // map hover values based on the player's perspective (player 1, 2, or  3)
-                  const mappedValues = mapValuesBasedOnPerspective(p1, p2, p3, playerId);
-  
-  
-                  // mapping the hover positions based on the player's perspective
-                  const hoverPositions = {
-                      1: { bottom: 'p1', topLeft: 'p2', topRight: 'p3' },   // Player 1: p1 bottom, p2 top-left, p3 top-right
-                      2: { bottom: 'p2', topLeft: 'p3', topRight: 'p1' },   // Player 2: p2 bottom, p3 top-left, p1 top-right
-                      3: { bottom: 'p3', topLeft: 'p1', topRight: 'p2' }    // Player 3: p3 bottom, p1 top-left, p2 top-right
-                  };
-  
-                  // extract the current player's hover mapping
-                  const playerHoverMapping = hoverPositions[playerId];
-  
-                  // display the hover values based on the current player's perspective
-                  showAndPositionHoverValue('hover-p1-value', mappedValues[playerHoverMapping.bottom], 'bottom');
-                  showAndPositionHoverValue('hover-p2-value', mappedValues[playerHoverMapping.topLeft], 'topLeft');
-                  showAndPositionHoverValue('hover-p3-value', mappedValues[playerHoverMapping.topRight], 'topRight');
-  
-              });
-  
-              // event listener for mouse leave
-              button.addEventListener('mouseleave', () => {
-                  // Hide hover values when the mouse leaves the button
-                  hideHoverValue('hover-p1-value');
-                  hideHoverValue('hover-p2-value');
-                  hideHoverValue('hover-p3-value');
-              });
-  
-              // function to hide the hover value by ID
-              function hideHoverValue(id) {
-                  const valueSpan = document.getElementById(id);
-                  if (valueSpan) {
-                      valueSpan.style.display = 'none';
-                  }
-              }
-          }
-  
-  
-          // maps values based on the player's perspective (Player 1: bottom, Player 2: left, Player 3: right)
-          function mapValuesBasedOnPerspective(p1, p2, p3, playerId) {
-              const mappings = {
-                  1: (p1, p2, p3) => ({ p1, p2, p3 }),
-                  2: (p1, p2, p3) => ({ p1: p2, p2: p3, p3: p1 }),
-                  3: (p1, p2, p3) => ({ p1: p3, p2: p1, p3: p2 })
-              };
-  
-              return mappings[playerId](p1, p2, p3);
-          }
-  
-  
-          //formats a value to one decimal place if it's not an integer
-          function formatCoordinate(value) {
-              if (Math.floor(value) !== value) {
-                  return value.toFixed(1);
-              }
-              return value;
-          }
-  
-  
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      // LIVE DATA HANDLING AND BUTTON CLICKING
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      let lastClickedButtonId = null; // Initialize globally
-      let countdownActive = false;
+</div>
 
-  
-        //store which buttons have been clicked and by who 
-        // Live data handling and button clicking
-        function liveRecv(data) {
-          console.log("5) checking if all players clicked or not:",data.allPlayersClicked);
-    if (data.allPlayersClicked) {
-        if (data.selected_button) {
-            console.log("Random proposer treatment is active");
-
-            // Highlight the randomly selected button for all players
-            const randomButton = document.getElementById(data.selected_button);
-            if (randomButton) {
-                console.log(`Displaying randomly selected button: ${data.selected_button}`);
-                const randomBtnState = buttonClickStates[data.selected_button] || {};
-                randomBtnState[`clickedByUser${data.selected_player}`] = true;
-                updateButtonAppearance(randomButton, randomBtnState);
-            }
-
-            // Each player also sees their own clicked button
-            const ownButton = document.getElementById(data.players_info[playerId]);
-            if (ownButton) {
-                console.log(`Displaying own button: ${data.players_info[playerId]}`);
-                const ownBtnState = buttonClickStates[data.players_info[playerId]] || {};
-                ownBtnState[`clickedByUser${playerId}`] = true;
-                updateButtonAppearance(ownButton, ownBtnState);
-            }
-        } else {
-            console.log("Standard behavior: all players' buttons displayed");
-            const buttonsClicked = data.players_info;
-
-            // Update each player's clicked button appearance
-            Object.entries(buttonsClicked).forEach(([player, buttonId]) => {
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    const btnState = buttonClickStates[buttonId] || {};
-                    btnState[`clickedByUser${player}`] = true;
-                    updateButtonAppearance(button, btnState);
-                }
-            });
-        }
-
-        // Start the 10-second countdown timer
-        var timeleft = 10;
-        var timer = setInterval(function () {
-            timeleft--;
-            if (timeleft <= 0) {
-                clearInterval(timer);
-                document.querySelector("form").submit();
-            }
-        }, 1000);
-    } else {
-        // Handle individual player's click before all have clicked
-        console.log("6)Not all players have clicked, updating instead the state for player",data.player_id);
-        if (data.player_id === playerId) {
-            const button = document.getElementById(data.button_id);
-            const btnState = buttonClickStates[data.button_id] || {};
-
-            // Update state for the current player's click
-            updatePlayerClickState(btnState, data.player_id);
-
-            // Reset other buttons clicked by the same player
-            resetOtherButtonState(data.button_id, data.player_id);
-
-            // Update button appearance
-            updateButtonAppearance(button, btnState);
-
-            // Update displayed points if it's the current player's click
-            if (data.player_id === playerId) {
-                updateDisplayedPoints(data.button_id);
-            }
-
-            // Send updated payoffs to the server
-            updatePayoffs();
-        }
-    }
-}
+<script>
 
 
-  
-  
-      //handle button clicks
-      function handleButtonClick(buttonId) {
-            console.log("2) live sending that button ",buttonId,"was clicked by ",playerId);
-              liveSend({
-                  button_clicked: true,
-                  button_id:buttonId,
-                  participants:playerId
-              });
-  
-              lastClickedButtonId = buttonId
-          }
-  
-  
-          // detect clicks outside of buttons
-          document.addEventListener('click', function(event) {
-              const allButtons = document.querySelectorAll('.button');
-              const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
-  
-              console.log('clicked on button:', clickedOnButton);
-  
-              // deselect the last clicked button if the click was outside
-              if (!clickedOnButton && lastClickedButtonId) {
-                  liveSend({
-                      button_clicked: false,
-                      button_id: lastClickedButtonId,
-                      participants: playerId
-                  });
-  
-                  console.log('deselecting button:', lastClickedButtonId);
-                  lastClickedButtonId = null;
-              }
-          });
-  
-  
-          let agreementButtonID = null;  // tracks the button currently in agreement
-          let prevButtonStates = {};  // stores previous states for all buttons
-  
-          function monitorClickAgreement(buttonID) {
-              // calculate the total number of clicks on the current button
-              const totalClicksOnButton = Object.values(buttonClickStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
-  
-              // identify which participants are actively clicking the button
-              const activeParticipants = Object.entries(buttonClickStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
-  
-  
-              // if there's already button under agreement, check its state
-              if (agreementButtonID !== null) {
-                  const agreementCurrentSum = Object.values(buttonClickStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
-  
-                  // if agreement condition (2+ clicks) is broken, stop the timer and clear agreement
-                  if (agreementCurrentSum < 2) {
-                          stopAgreementTimer();
-                          console.log(`Agreement broken on button ${agreementButtonID}`);
-                          agreementButtonID = null;  // clear the agreement state
-                      }
-              }
-  
-              liveSend({ numInAgreement: totalClicksOnButton, activeParticipants: activeParticipants });
-  
-              // if the current button reaches an agreement condition and no other agreement is active, stop the agreement
-              if (totalClicksOnButton >= 2 && agreementButtonID === null) {
-                  startAgreementTimer();
-                  agreementButtonID = buttonID;
-                //   console.log(`Agreement started on button ${buttonID}`);
-              }
-  
-              // store the current state for the next update
-              prevButtonStates[buttonID] = { ...buttonClickStates[buttonID] };
-          }
-  
-  
-          //map playerId to a specific color scheme from perspective of each player
-          var playerColor = {
-              1: {1: 'green', 2: 'red', 3: 'blue'},
-              2: {1: 'blue', 2: 'green', 3: 'red'},
-              3: {1: 'red', 2: 'blue', 3: 'green'}
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          // CONFIGURATION
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+          // configuration settings for game
+          var config = {
+              totalNodes: 36,              // Number of nodes in the triangle
+              totalPoints: 12,             // Total points to distribute
+              initialCurrencyValue: 3.00,  // Starting currency value
+              ratificationTime: 3          // Time for ratification/agreement countdown
           };
-  
-  
-          function updateButtonAppearance(button, btnState) {
-            console.log("updating for...",window.playerId);
-            // if(allPlayersClicked){
-            //     // console.log("This is the button", button.id, "and it's ",btnState);
-            // }
-            // Reset the button back to its neutral state
-            button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
-            
-            // Define the current player's color mapping based on their ID
-            const currentPlayerColors = playerColor[playerId];
-            
-            // Track which players are currently clicking on the button
-            var clickedPlayers = [];
-            if (btnState.clickedByUser1) clickedPlayers.push(1);
-            if (btnState.clickedByUser2) clickedPlayers.push(2);
-            if (btnState.clickedByUser3) clickedPlayers.push(3);
 
-            // Check how many players are clicking the button and update the appearance accordingly
-            if (clickedPlayers.length === 3) { 
-                // All players clicked the button, show all combined colors
-                button.classList.add('all-borders');
-            } else if (clickedPlayers.length === 2) {
-                // Two players clicked the button, show combined colors for them
-                button.classList.add(getCombinedColorClass(clickedPlayers[0], clickedPlayers[1]));
-            } else if (clickedPlayers.length === 1) {
-                // Only one player clicked the button, show that player's color
-                button.classList.add(getColorBorderClass(clickedPlayers[0]));
+          // track which buttons have been clicked and by who
+          if (!window.buttonClickStates) {
+              window.buttonClickStates = {}; // Ensure a single instance is shared across all players
+          }
+
+          // store the player's ID
+          window.playerId = {{ player.id_in_group }};
+
+          // track the border color states for different actions
+          var borderColors = {
+              red: false,
+              blue: false,
+              green: false
+          };
+
+          // when the document is fully loaded, initialize the game setup
+              document.addEventListener('DOMContentLoaded', function() {
+                  generateTriangle(config.totalNodes, config.totalPoints);
+                  positionCornerLabels();
+                  liveSend({ 'experiment_started': Date.now() });
+              });
+
+
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          //CODE TO INITIALIZE THE TRIANGLE
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+              // function to generate triangle of n nodes
+              // points are divided equally
+              function generateTriangle(numOfCircles, totalPoints) {
+                  const triangleContainer = document.getElementById('triangleContainer');
+                  const numRows = Math.floor(Math.sqrt(2 * numOfCircles + 0.25) - 0.5);
+
+                  //scaling factor for converting unscaled points to scaled points
+                  //i.e (0,3,0) *scaling factor of 5=> (0,15,0)
+                  const scalingFactor = totalPoints / (numRows - 1);
+
+                  //generate each row of buttons for inverted triangle with "numRows" number of rows
+                  for (let rowNum = numRows; rowNum >= 1; rowNum--) {
+
+                      const numButtonsInRow=rowNum;
+                      const whichPlayerPerspective=playerId;
+
+                      //generate a new row of buttons and append to the triangle
+                      let newRow=generateRow(rowNum, numButtonsInRow,whichPlayerPerspective,scalingFactor,numRows);
+                      triangleContainer.appendChild(newRow);
+                  }
+              }
+
+              //function to handle creating a row with multiple buttons
+              function generateRow(rowNum, numOfButtons,whichPlayerPerspective,scalingFactor,numRows){
+                      const rowDiv = document.createElement('div');
+                      rowDiv.className = 'triangle-row';
+
+                      //for each button in the row
+                      for (let i=0; i<numOfButtons;i++){
+                          //calculate points for each player
+                          //Note: from player 1's perspective: player 1 is bottom player, player 2 is left, player 3 is right
+                          let unscaledPointsForPlayer1= numRows-rowNum;
+                          let unscaledPointsForPlayer2= rowNum-1-i;
+                          let unscaledPointsForPlayer3= i;
+
+                          //scale points for each player
+                          let pointsForPlayer1=formatCoordinate(unscaledPointsForPlayer1*scalingFactor);
+                          let pointsForPlayer2=formatCoordinate(unscaledPointsForPlayer2*scalingFactor);
+                          let pointsForPlayer3=formatCoordinate(unscaledPointsForPlayer3*scalingFactor);
+
+                          //generate a unique button and append to row
+                          let btn=generateButton(pointsForPlayer1,pointsForPlayer2,pointsForPlayer3,whichPlayerPerspective);
+                          rowDiv.appendChild(btn);
+                      }
+                  //return the row once all the buttons have been appended
+                  return rowDiv;
+              }
+
+
+              //handles the creation of a single button
+              function generateButton(p1,p2,p3, whichPlayerPerspective){
+
+                   //which player is it? depending on that, map the points correctly
+                   const { p1: pointsForPlayer1, p2: pointsForPlayer2, p3: pointsForPlayer3 } = mapValuesBasedOnPerspective(p1, p2, p3, whichPlayerPerspective);
+
+                   //create button element and set attributes
+                   const button = document.createElement('button');
+                   button.className = 'button';
+                   button.type = 'button';
+                   const buttonId = `btn${pointsForPlayer1}_${pointsForPlayer2}_${pointsForPlayer3}`;
+                   button.id = buttonId;
+                   button.dataset.coords = `(${pointsForPlayer1},${pointsForPlayer2},${pointsForPlayer3})`; // Store coordinates in data attribute
+
+                   //for each button, we want to know who they've been clicked by
+                   buttonClickStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
+
+                   //attach event listeners to the button
+                   addButtonEventListeners(button);
+
+                   return button;
+              }
+
+
+              //function to attach event listeners to each newly created button
+              function addButtonEventListeners(button) {
+
+                  // event listener for button click
+                  button.addEventListener('click', (event) => {
+                      // console.log("1) handling button click for",event.target.id);
+                      handleButtonClick(event.target.id);
+                  });
+
+                  // event listener for mouse hover
+                  button.addEventListener('mouseenter', (event) => {
+                      // split the stored coordinates, clean them up, and convert them to numbers
+                      const hoverValues = event.target.dataset.coords.split(',').map(coord => coord.trim().replace(/[()]/g, '')).map(Number);
+                      const [p1, p2, p3] = hoverValues;
+
+                      // map hover values based on the player's perspective (player 1, 2, or  3)
+                      const mappedValues = mapValuesBasedOnPerspective(p1, p2, p3, playerId);
+
+
+                      // mapping the hover positions based on the player's perspective
+                      const hoverPositions = {
+                          1: { bottom: 'p1', topLeft: 'p2', topRight: 'p3' },   // Player 1: p1 bottom, p2 top-left, p3 top-right
+                          2: { bottom: 'p2', topLeft: 'p3', topRight: 'p1' },   // Player 2: p2 bottom, p3 top-left, p1 top-right
+                          3: { bottom: 'p3', topLeft: 'p1', topRight: 'p2' }    // Player 3: p3 bottom, p1 top-left, p2 top-right
+                      };
+
+                      // extract the current player's hover mapping
+                      const playerHoverMapping = hoverPositions[playerId];
+
+                      // display the hover values based on the current player's perspective
+                      showAndPositionHoverValue('hover-p1-value', mappedValues[playerHoverMapping.bottom], 'bottom');
+                      showAndPositionHoverValue('hover-p2-value', mappedValues[playerHoverMapping.topLeft], 'topLeft');
+                      showAndPositionHoverValue('hover-p3-value', mappedValues[playerHoverMapping.topRight], 'topRight');
+
+                  });
+
+                  // event listener for mouse leave
+                  button.addEventListener('mouseleave', () => {
+                      // Hide hover values when the mouse leaves the button
+                      hideHoverValue('hover-p1-value');
+                      hideHoverValue('hover-p2-value');
+                      hideHoverValue('hover-p3-value');
+                  });
+
+                  // function to hide the hover value by ID
+                  function hideHoverValue(id) {
+                      const valueSpan = document.getElementById(id);
+                      if (valueSpan) {
+                          valueSpan.style.display = 'none';
+                      }
+                  }
+              }
+
+
+              // maps values based on the player's perspective (Player 1: bottom, Player 2: left, Player 3: right)
+              function mapValuesBasedOnPerspective(p1, p2, p3, playerId) {
+                const mappings = {
+                    1: (p1, p2, p3) => ({ p1, p2, p3 }),
+                    2: (p1, p2, p3) => ({ p1: p3, p2: p1, p3: p2 }), // Corrected for player 2
+                    3: (p1, p2, p3) => ({ p1: p2, p2: p3, p3: p1 })  // Corrected for player 3
+                };
+
+                  return mappings[playerId](p1, p2, p3);
+              }
+
+
+              //formats a value to one decimal place if it's not an integer
+              function formatCoordinate(value) {
+                  if (Math.floor(value) !== value) {
+                      return value.toFixed(1);
+                  }
+                  return value;
+              }
+
+
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////
+          // LIVE DATA HANDLING AND BUTTON CLICKING
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////
+          let lastClickedButtonId = null; // Initialize globally
+          let countdownActive = false;
+
+
+            //store which buttons have been clicked and by who
+            // Live data handling and button clicking
+            function liveRecv(data) {
+              // console.log("5) checking if all players clicked or not:",data.allPlayersClicked);
+              if (data.allPlayersClicked) {
+                  if (data.selected_button) {
+                      // console.log("Random proposer treatment is active");
+
+                      // Highlight the randomly selected button for all players
+                      const randomButton = document.getElementById(data.selected_button);
+                      if (randomButton) {
+                          // console.log(`Displaying randomly selected button: ${data.selected_button}`);
+                          const randomBtnState = buttonClickStates[data.selected_button] || {};
+                          randomBtnState[`clickedByUser${data.selected_player}`] = true;
+                          updateButtonAppearance(randomButton, randomBtnState);
+                          
+                      }
+
+                      // Each player also sees their own clicked button
+                      const ownButton = document.getElementById(data.players_info[playerId]);
+                      if (ownButton) {
+                          // console.log(`Displaying own button: ${data.players_info[playerId]}`);
+                          const ownBtnState = buttonClickStates[data.players_info[playerId]] || {};
+                          ownBtnState[`clickedByUser${playerId}`] = true;
+                          updateButtonAppearance(ownButton, ownBtnState);
+                      }
+                  }
+              else {
+                      // console.log("Standard behavior: all players' buttons displayed");
+                      const buttonsClicked = data.players_info;
+
+                      // Update each player's clicked button appearance
+                      Object.entries(buttonsClicked).forEach(([player, buttonId]) => {
+                          const button = document.getElementById(buttonId);
+                          if (button) {
+                              const btnState = buttonClickStates[buttonId] || {};
+                              btnState[`clickedByUser${player}`] = true;
+
+                              updateButtonAppearance(button, btnState);
+                          }
+                      });
+              }
+              console.log("the data.button id is",data.button_id);
+              monitorClickAgreement(data.button_id);
+              updatePayoffs(data.button_id);
+
+
+
+          // console.log('All players have clicked. Freezing updates.');
+          // Disable further interactions
+          document.querySelectorAll('.button').forEach(button => {
+              button.disabled = true; // Disable all buttons
+          });
+
+
+         // Add global event listeners to prevent interaction
+      document.addEventListener("click", preventInteraction, true);
+      document.addEventListener("mouseenter", preventInteraction, true);
+      document.addEventListener("mouseleave", preventInteraction, true);
+
+            //stop other events
+            function preventInteraction(event) {
+                    // console.log("Interaction prevented: Page is frozen");
+                    event.stopImmediatePropagation(); // Block the event
+                    event.preventDefault(); // Prevent default behavior
             }
 
-            // Helper function to get the color border class for a specific player
-            function getColorBorderClass(playerNum) {
-                return `${currentPlayerColors[playerNum]}-border`;
-            }
 
-            // Helper function to combine colors for two players clicking the same button
-            function getCombinedColorClass(playerNum1, playerNum2) {
-                const colors = [currentPlayerColors[playerNum1], currentPlayerColors[playerNum2]].sort();
-                return colors.join('-');
+            // Start the 10-second countdown timer
+            var timeleft = 10;
+            var timer = setInterval(function () {
+                timeleft--;
+                if (timeleft <= 0) {
+                    clearInterval(timer);
+                    document.querySelector("form").submit();
+                }
+            }, 1000);
+        } else {
+            // Handle individual player's click before all have clicked
+            // console.log("6)Not all players have clicked, updating instead the state for player",data.player_id);
+            if (data.player_id === playerId) {
+                const button = document.getElementById(data.button_id);
+                const btnState = buttonClickStates[data.button_id] || {};
+
+                console.log("HEHAODOABWUO Updating",playerId,"'s click states");
+                console.log("Before clickstates", window.buttonClickStates[data.button_id]);
+                // Update state for the current player's click
+                updatePlayerClickState(data.button_id, data.player_id);
+                console.log("After clickstates", window.buttonClickStates[data.button_id]);
+
+                // Reset other buttons clicked by the same player
+                resetOtherButtonState(data.button_id, data.player_id);
+
+                // Update button appearance
+                updateButtonAppearance(button, btnState);
+                monitorClickAgreement(button.id);
+
+
+                // Update displayed points if it's the current player's click
+                if (data.player_id === playerId) {
+                    updateDisplayedPoints(data.button_id);
+                }
+
+                // Send updated payoffs to the server
+                updatePayoffs(data.button_id);
             }
         }
+    }
 
-  
-  
-          //updates and sends current payoffs and game data to the server
-          function updatePayoffs() {
-              // Get payoff values from the input fields
-              const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
-              const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
-              const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
-  
-              //get current exchange rate
-              const currentExchangeRate = parseFloat(document.getElementById('euValue').textContent);
-  
-              //current time
-              var currentTime = new Date();
-  
-            //   console.log("Updating payoffs", { payoff1, payoff2, payoff3, currentExchangeRate });
-  
-              // Send the new payoffs to the server and additional info for tracking
-              liveSend({
-                  payoffs: {
-                      p1_points: payoff1,
-                      p2_points: payoff2,
-                      p3_points: payoff3,
-                      currency_decay: currentExchangeRate,
-                      player_id: playerId,
-                      timestamp: currentTime.toISOString(),
-                      time_since: Date.now()
+
+
+
+          //handle button clicks
+          function handleButtonClick(buttonId) {
+              console.log("button clicked -->");
+                logButtonClickStates();
+
+                // console.log("2) live sending that button ",buttonId,"was clicked by ",playerId);
+                  liveSend({
+                      button_clicked: true,
+                      button_id:buttonId,
+                      participants:playerId
+                  });
+
+                  lastClickedButtonId = buttonId
+              }
+
+
+              // detect clicks outside of buttons
+              document.addEventListener('click', function(event) {
+                  const allButtons = document.querySelectorAll('.button');
+                  const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
+
+                  // console.log('clicked on button:', clickedOnButton);
+
+                  // deselect the last clicked button if the click was outside
+                  if (!clickedOnButton && lastClickedButtonId) {
+                      liveSend({
+                          button_clicked: false,
+                          button_id: lastClickedButtonId,
+                          participants: playerId
+                      });
+
+                      // console.log('deselecting button:', lastClickedButtonId);
+                      lastClickedButtonId = null;
                   }
               });
+
+
+              let agreementButtonID = null;  // tracks the button currently in agreement
+              let prevButtonStates = {};  // stores previous states for all buttons
+
+              function monitorClickAgreement(buttonID) {
+   
+
+                  // calculate the total number of clicks on the current button
+                  console.log("Button click states for",buttonID," are:",buttonClickStates[buttonID]);
+                  const totalClicksOnButton = Object.values(buttonClickStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
+
+                  // identify which participants are actively clicking the button
+                  const activeParticipants = Object.entries(buttonClickStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
+
+
+                  // if there's already button under agreement, check its state
+                  if (agreementButtonID !== null) {
+                      const agreementCurrentSum = Object.values(buttonClickStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
+
+                      // if agreement condition (2+ clicks) is broken, stop the timer and clear agreement
+                      if (agreementCurrentSum < 2) {
+                              // stopAgreementTimer();
+                              // console.log(`Agreement broken on button ${agreementButtonID}`);
+                              agreementButtonID = null;  // clear the agreement state
+                          }
+                  }
+
+                  console.log("HERE: The number of people who have clicked on ",buttonID," is ",totalClicksOnButton);
+                  liveSend({ numInAgreement: totalClicksOnButton, activeParticipants: activeParticipants });
+
+                  // if the current button reaches an agreement condition and no other agreement is active, stop the agreement
+                  if (totalClicksOnButton >= 2 && agreementButtonID === null) {
+                      // startAgreementTimer();
+                      agreementButtonID = buttonID;
+                    //   console.log(`Agreement started on button ${buttonID}`);
+                  }
+
+                  // store the current state for the next update
+                  prevButtonStates[buttonID] = { ...buttonClickStates[buttonID] };
+              }
+
+
+              //map playerId to a specific color scheme from perspective of each player
+              var playerColor = {
+                  1: {1: 'green', 2: 'red', 3: 'blue'},
+                  2: {1: 'blue', 2: 'green', 3: 'red'},
+                  3: {1: 'red', 2: 'blue', 3: 'green'}
+              };
+
+
+              function updateButtonAppearance(button, btnState) {
+                console.log("updating for...",window.playerId);
+                // if(allPlayersClicked){
+                //     // console.log("This is the button", button.id, "and it's ",btnState);
+                // }
+                // Reset the button back to its neutral state
+                button.classList.remove('red-border', 'blue-border', 'green-border', 'red-blue', 'red-green', 'green-blue', 'blue-red', 'green-red', 'blue-green', 'all-borders');
+
+                // Define the current player's color mapping based on their ID
+                const currentPlayerColors = playerColor[playerId];
+
+                // Track which players are currently clicking on the button
+                var clickedPlayers = [];
+                if (btnState.clickedByUser1) clickedPlayers.push(1);
+                if (btnState.clickedByUser2) clickedPlayers.push(2);
+                if (btnState.clickedByUser3) clickedPlayers.push(3);
+
+                // Check how many players are clicking the button and update the appearance accordingly
+                if (clickedPlayers.length === 3) {
+                    // All players clicked the button, show all combined colors
+                    button.classList.add('all-borders');
+                } else if (clickedPlayers.length === 2) {
+                    // Two players clicked the button, show combined colors for them
+                    button.classList.add(getCombinedColorClass(clickedPlayers[0], clickedPlayers[1]));
+                } else if (clickedPlayers.length === 1) {
+                    // Only one player clicked the button, show that player's color
+                    button.classList.add(getColorBorderClass(clickedPlayers[0]));
+                }
+
+                // Helper function to get the color border class for a specific player
+                function getColorBorderClass(playerNum) {
+                    return `${currentPlayerColors[playerNum]}-border`;
+                }
+
+                // Helper function to combine colors for two players clicking the same button
+                function getCombinedColorClass(playerNum1, playerNum2) {
+                    const colors = [currentPlayerColors[playerNum1], currentPlayerColors[playerNum2]].sort();
+                    return colors.join('-');
+                }
+            }
+
+
+  // Updates and sends current payoffs and game data to the server
+  function updatePayoffs(button_id) {
+      try {
+          // Debug: Log function entry
+          console.log("Entering updatePayoffs with button_id:", button_id);
+
+          // // Retrieve and parse payoff values
+          // const payoff1 = parseFloat(document.getElementById('p1-value').textContent.trim());
+          // const payoff2 = parseFloat(document.getElementById('p2-value').textContent.trim());
+          // const payoff3 = parseFloat(document.getElementById('p3-value').textContent.trim());
+
+          // // Debug: Log payoff values
+          // console.log("Retrieved payoff values:", { payoff1, payoff2, payoff3 });
+
+
+        // Extract numeric values from the button_id (e.g., 'btn10_20_30' -> [10, 20, 30])
+          const values = button_id.replace('btn', '').split('_').map(Number);
+
+          if (values.length !== 3) {
+              throw new Error(`Invalid button_id format: ${button_id}`);
           }
-  
-          // updates the displayed points for players P1, P2, and P3 based on the clicked button
-          function updateDisplayedPoints(buttonId) {
-  
-              // extract the numeric values from the buttonId (e.g., 'btn10_20_30' -> [10, 20, 30])
-              var values = buttonId.replace('btn', '').split('_').map(Number);
-              document.getElementById('p1-value').textContent = values[0]; //update P1 value
-              document.getElementById('p2-value').textContent = values[1];
-              document.getElementById('p3-value').textContent = values[2];
-          }
-  
-  
-          //returns values mapping based on playerID to be shown in hover values
-          function mapValuesBasedOnPlayer(values, playerId) {
-              // This function will return the values array reordered based on the player ID
-              switch(playerId) {
-                  case 1: // Original order for Player 1
-                      return [values[1],values[2],values[0]]
-                  case 2: // Switch positions for Player 2 perspective
-                      return [values[2], values[0], values[1]];
-                  case 3: // Different order for Player 3
-                      return [values[0], values[1], values[2]];
-                  default:
-                      return [values[1],values[2],values[0]]
+
+          // Assign extracted values to payoff variables
+          const [payoff1, payoff2, payoff3] = values;
+
+          // Debug: Log extracted payoffs
+          console.log("Extracted payoffs from button_id:", { payoff1, payoff2, payoff3 });
+
+
+          // // Retrieve and parse the current exchange rate
+          const currentExchangeRate = parseFloat(document.getElementById('euValue').textContent);
+
+          // Debug: Log exchange rate
+          console.log("Retrieved exchange rate:", currentExchangeRate);
+
+          // Get the current time
+          const currentTime = new Date();
+
+          // Debug: Log current time
+          console.log("Current time:", currentTime.toISOString());
+
+          // Prepare data to send
+          const dataToSend = {
+              payoffs: {
+                  p1_points: payoff1,
+                  p2_points: payoff2,
+                  p3_points: payoff3,
+                  currency_decay: currentExchangeRate,
+                  player_id: playerId,
+                  timestamp: currentTime.toISOString(),
+                  time_since: Date.now(),
+                  button_id: button_id
+              }
+          };
+
+          // Debug: Log the data to be sent
+          console.log("Data prepared for liveSend:", JSON.stringify(dataToSend, null, 2));
+
+          // Send the data to the server
+          liveSend(dataToSend);
+
+          // Debug: Confirm send
+          console.log("Data sent successfully.");
+      } catch (error) {
+          // Debug: Log any errors that occur
+          console.error("Error in updatePayoffs:", error);
+      }
+  }
+
+
+              // updates the displayed points for players P1, P2, and P3 based on the clicked button
+              function updateDisplayedPoints(buttonId) {
+
+                  // extract the numeric values from the buttonId (e.g., 'btn10_20_30' -> [10, 20, 30])
+                  var values = buttonId.replace('btn', '').split('_').map(Number);
+                  document.getElementById('p1-value').textContent = values[0]; //update P1 value
+                  document.getElementById('p2-value').textContent = values[1];
+                  document.getElementById('p3-value').textContent = values[2];
+              }
+
+
+              //returns values mapping based on playerID to be shown in hover values
+              function mapValuesBasedOnPlayer(values, playerId) {
+                  // This function will return the values array reordered based on the player ID
+                  switch(playerId) {
+                      case 1: // Original order for Player 1
+                          return [values[1],values[2],values[0]]
+                      case 2: // Switch positions for Player 2 perspective
+                          return [values[2], values[0], values[1]];
+                      case 3: // Different order for Player 3
+                          return [values[0], values[1], values[2]];
+                      default:
+                          return [values[1],values[2],values[0]]
+                  }
+              }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // POSITION ELEMENTS (HOVER VALUE AND CORNER LABELS)
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////
+              function showAndPositionHoverValue(id, value, position) {
+              var valueSpan = document.getElementById(id);
+              valueSpan.textContent = value;
+              valueSpan.style.display = 'block';
+
+              var containerRect = document.getElementById('triangleContainer').getBoundingClientRect();
+
+              // account for scrolling
+              var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+              var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+              // position hover value based on specified position
+              if (position === 'topLeft') {
+                  valueSpan.style.left = (containerRect.left + scrollLeft - 25) + 'px';
+                  valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
+              } else if (position === 'topRight') {
+                  valueSpan.style.left = (containerRect.right + scrollLeft + 25 - valueSpan.offsetWidth) + 'px';
+                  valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
+              } else if (position === 'bottom') {
+                  valueSpan.style.left = (containerRect.left + scrollLeft + (containerRect.width - valueSpan.offsetWidth) / 2) + 'px';
+                  valueSpan.style.top = (containerRect.bottom + scrollTop + 25 - valueSpan.offsetHeight) + 'px';
               }
           }
-  
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // POSITION ELEMENTS (HOVER VALUE AND CORNER LABELS)
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-          function showAndPositionHoverValue(id, value, position) {
-          var valueSpan = document.getElementById(id);
-          valueSpan.textContent = value;
-          valueSpan.style.display = 'block';
-  
-          var containerRect = document.getElementById('triangleContainer').getBoundingClientRect();
-  
-          // account for scrolling
-          var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-          var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  
-          // position hover value based on specified position
-          if (position === 'topLeft') {
-              valueSpan.style.left = (containerRect.left + scrollLeft - 25) + 'px';
-              valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
-          } else if (position === 'topRight') {
-              valueSpan.style.left = (containerRect.right + scrollLeft + 25 - valueSpan.offsetWidth) + 'px';
-              valueSpan.style.top = (containerRect.top + scrollTop) + 'px';
-          } else if (position === 'bottom') {
-              valueSpan.style.left = (containerRect.left + scrollLeft + (containerRect.width - valueSpan.offsetWidth) / 2) + 'px';
-              valueSpan.style.top = (containerRect.bottom + scrollTop + 25 - valueSpan.offsetHeight) + 'px';
-          }
-      }
-  
-  
-      function positionCornerLabels() {
-          const triangleContainer = document.getElementById('triangleContainer');
-          const triangleRect = triangleContainer.getBoundingClientRect();
-  
-          const participantALabel = document.getElementById('participant2Label');
-          const participantBLabel = document.getElementById('participant3Label');
-          const youLabel = document.getElementById('youLabel');
-  
-          // fixed distances from triangle corners
-          const cornerOffsetX = 75;
-          const cornerOffsetY = 30;
-          const bottomOffset = 30;
-  
-          // position labels around the triangle
-          participantALabel.style.position = 'absolute';
-          participantALabel.style.left = `${triangleRect.left - cornerOffsetX}px`;
-          participantALabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
-  
-          participantBLabel.style.position = 'absolute';
-          participantBLabel.style.left = `${triangleRect.right + cornerOffsetX - participantBLabel.offsetWidth}px`;
-          participantBLabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
-  
-          youLabel.style.position = 'absolute';
-          youLabel.style.left = `${triangleRect.left + (triangleRect.width - youLabel.offsetWidth) / 2}px`;
-          youLabel.style.top = `${triangleRect.bottom + bottomOffset}px`;
-      }
-  
-  
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // HELPER FUNCTIONS
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      function updatePlayerClickState(btnState, playerId) {
-        console.log(`Player ${playerId} clicked. Updating state.`);
 
-              if (playerId === 1) {
-                  btnState.clickedByUser1 = !btnState.clickedByUser1;
-              } else if (playerId === 2) {
-                  btnState.clickedByUser2 = !btnState.clickedByUser2;
-              } else if (playerId === 3) {
-                  btnState.clickedByUser3 = !btnState.clickedByUser3;
+
+          function positionCornerLabels() {
+              const triangleContainer = document.getElementById('triangleContainer');
+              const triangleRect = triangleContainer.getBoundingClientRect();
+
+              const participantALabel = document.getElementById('participant2Label');
+              const participantBLabel = document.getElementById('participant3Label');
+              const youLabel = document.getElementById('youLabel');
+
+              // fixed distances from triangle corners
+              const cornerOffsetX = 75;
+              const cornerOffsetY = 30;
+              const bottomOffset = 30;
+
+              // position labels around the triangle
+              participantALabel.style.position = 'absolute';
+              participantALabel.style.left = `${triangleRect.left - cornerOffsetX}px`;
+              participantALabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
+
+              participantBLabel.style.position = 'absolute';
+              participantBLabel.style.left = `${triangleRect.right + cornerOffsetX - participantBLabel.offsetWidth}px`;
+              participantBLabel.style.top = `${triangleRect.top - cornerOffsetY}px`;
+
+              youLabel.style.position = 'absolute';
+              youLabel.style.left = `${triangleRect.left + (triangleRect.width - youLabel.offsetWidth) / 2}px`;
+              youLabel.style.top = `${triangleRect.bottom + bottomOffset}px`;
+          }
+
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+      // HELPER FUNCTIONS
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+              function updatePlayerClickState(button_id, playerId) {
+                  const btnState = buttonClickStates[button_id];
+                  console.log("Before update:", btnState);
+
+                  if (playerId === 1) btnState.clickedByUser1 = !btnState.clickedByUser1;
+                  if (playerId === 2) btnState.clickedByUser2 = !btnState.clickedByUser2;
+                  if (playerId === 3) btnState.clickedByUser3 = !btnState.clickedByUser3;
+
+                  console.log("After update:", btnState);
+                  buttonClickStates[button_id] = btnState; // Ensure global state is updated
+                  logButtonClickStates();
               }
-          }
-  
-          //for all other buttons ('otherButtonId'), state is reset based on player who clicks
-          //i.e. if player 1 clicks a button, all other buttons set to "not-clicked" for player 1
-          function resetOtherButtonState(buttonId, playerId) {
-            console.log(`Resetting button states for player ${playerId}`);
 
-              Object.keys(buttonClickStates).forEach(function(otherButtonId) {
-                  if (otherButtonId !== buttonId) {
-                      const otherBtnsState = buttonClickStates[otherButtonId];
-                      if (playerId === 1) {
-                          otherBtnsState.clickedByUser1 = false;
-                      } else if (playerId === 2) {
-                          otherBtnsState.clickedByUser2 = false;
-                      } else if (playerId === 3) {
-                          otherBtnsState.clickedByUser3 = false;
+
+              function logButtonClickStates() {
+                  console.log("Current buttonClickStates:", JSON.stringify(window.buttonClickStates, null, 2));
+              }
+
+              //for all other buttons ('otherButtonId'), state is reset based on player who clicks
+              //i.e. if player 1 clicks a button, all other buttons set to "not-clicked" for player 1
+              function resetOtherButtonState(buttonId, playerId) {
+                console.log(`Resetting button states for player ${playerId}`);
+
+                  Object.keys(buttonClickStates).forEach(function(otherButtonId) {
+                      if (otherButtonId !== buttonId) {
+                          const otherBtnsState = buttonClickStates[otherButtonId];
+                          if (playerId === 1) {
+                              otherBtnsState.clickedByUser1 = false;
+                          } else if (playerId === 2) {
+                              otherBtnsState.clickedByUser2 = false;
+                          } else if (playerId === 3) {
+                              otherBtnsState.clickedByUser3 = false;
+                          }
+                          updateButtonAppearance(document.getElementById(otherButtonId), otherBtnsState);
                       }
-                      updateButtonAppearance(document.getElementById(otherButtonId), otherBtnsState);
-                  }
-              });
-          }
-  </script>
-  
-  <style>
+                  });
+              }
+</script>
 
-    .otree-btn-next{
-      display:none;
-    }
-    
-    .parent-container {
-      display: flex;
-      align-content: center;
-      justify-content: center;
-      min-width: 500px;
-    }
-  
-    #triangleContainer {
-      display: inline-block;
-      margin-top: 50px;
-      text-align: center;
-    }
-  
-    .corner-label {
-      position: absolute;
-      font-size: 16px;
-      white-space: nowrap;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-  
-    .icon1,
-    .icon2 {
-      height: 42px;
-      width: 30px;
-      position: relative;
-      margin: 10px;
-      margin-top: 2px;
-    }
-  
-    #participant2Label,
-    #participant3Label,
-    #youLabel {
-      padding: 0;
-      margin: 0;
-      font-weight: bold;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-    }
-  
-    #participant2Label {
-      align-items: flex-start;
-      color: orange;
-    }
-  
-    #participant3Label {
-      align-items: flex-end;
-      color: blue;
-    }
-  
-    #youLabel {
-      align-items: center;
-      color: green;
-      text-align: center;
-    }
-  
-    .header-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-  
-    .values-container,
-    .timers-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-    }
-  
-    #hover-p1-value,
-    #hover-p2-value,
-    #hover-p3-value {
-      position: absolute;
-      display: none;
-    }
-  
-    #timer,
-    #agreement-timer {
-      flex-basis: 50%;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-      font-size: 20px;
-    }
-  
-    .currency-decay {
-      height: 30px;
-      width: 200px;
-      border: 1px solid green;
-      text-align: center;
-    }
+<style>
+  .otree-btn-next {
+    display: none;
+  }
 
-  
-    #player-values {
-      display: none;
-      margin-bottom: 30px;
-    }
-  
-    .triangle-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-  
-    .button {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      font-size: 0px;
-      line-height: 30px;
-      color: black;
-      border: 1px solid #ccc;
-      background-color: white;
-      position: relative;
-      overflow: hidden;
-    }
-/*   
+  .parent-container {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    min-width: 500px;
+  }
+
+  #triangleContainer {
+    display: inline-block;
+    margin-top: 50px;
+    text-align: center;
+  }
+
+  .corner-label {
+    position: absolute;
+    font-size: 16px;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .icon1,
+  .icon2 {
+    height: 42px;
+    width: 30px;
+    position: relative;
+    margin: 10px;
+    margin-top: 2px;
+  }
+
+  #participant2Label,
+  #participant3Label,
+  #youLabel {
+    padding: 0;
+    margin: 0;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  #participant2Label {
+    align-items: flex-start;
+    color: red;
+  }
+
+  #participant3Label {
+    align-items: flex-end;
+    color: blue;
+  }
+
+  #youLabel {
+    align-items: center;
+    color: green;
+    text-align: center;
+  }
+
+  .header-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .values-container,
+  .timers-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  #hover-p1-value,
+  #hover-p2-value,
+  #hover-p3-value {
+    position: absolute;
+    display: none;
+  }
+
+  #timer,
+  #agreement-timer {
+    flex-basis: 50%;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+  }
+
+  .currency-decay {
+    height: 30px;
+    width: 200px;
+    border: 1px solid green;
+    text-align: center;
+  }
+
+  #player-values {
+    display: none;
+    margin-bottom: 30px;
+  }
+
+  .triangle-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .button {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 0px;
+    line-height: 30px;
+    color: black;
+    border: 1px solid #ccc;
+    background-color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  /*   
     .otree-timer {
         display: none;
     } */
 
-    .button:hover {
-      background-color: rgba(0, 0, 0, 0.5);
-    }
-  
-    .red-border {
-      border: 2px solid red;
-    }
-  
-    .blue-border {
-      border: 2px solid blue;
-    }
-  
-    .green-border {
-      border: 2px solid green;
-    }
-  
-    .red-blue {
-      border: none;
-      box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
-    }
-  
-    .red-green {
-      border: none;
-      box-shadow: 0 0 0 2px red, 0 0 0 4px green;
-    }
-  
-    .green-blue {
-      border: none;
-      box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
-    }
-  
-    .blue-red {
-      border: none;
-      box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
-    }
-  
-    .green-red {
-      border: none;
-      box-shadow: 0 0 0 2px red, 0 0 0 4px green;
-    }
-  
-    .blue-green {
-      border: none;
-      box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
-    }
-  
-    .all-borders {
-      border: none;
-      box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green;
-    }
-  
-    .red-fill {
-      background-color: red;
-    }
-  
-    .layers {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-content: center;
-    }
-  
-    
-  </style>
-  
-  {{ next_button }}
-  {{ formfields }} {{ endblock }}
-  
+  .button:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .red-border {
+    border: 2px solid red;
+  }
+
+  .blue-border {
+    border: 2px solid blue;
+  }
+
+  .green-border {
+    border: 2px solid green;
+  }
+
+  .red-blue {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
+  }
+
+  .red-green {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px green;
+  }
+
+  .green-blue {
+    border: none;
+    box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
+  }
+
+  .blue-red {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px blue;
+  }
+
+  .green-red {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px green;
+  }
+
+  .blue-green {
+    border: none;
+    box-shadow: 0 0 0 2px green, 0 0 0 4px blue;
+  }
+
+  .all-borders {
+    border: none;
+    box-shadow: 0 0 0 2px red, 0 0 0 4px blue, 0 0 0 6px green;
+  }
+
+  .red-fill {
+    background-color: red;
+  }
+
+  .layers {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: center;
+  }
+</style>
+
+{{ next_button }} {{ formfields }} {{ endblock }}

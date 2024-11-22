@@ -22,6 +22,9 @@ class C(BaseConstants):
     NUM_ROUNDS = 1          # number of cycles of the entire game
     NUM_ROUNDS_FOR_PAYMENT = 3
 
+
+global enable_compuslory_offer
+
 class Subsession(BaseSubsession):
     def creating_session(self):
         if random_grouping:
@@ -34,7 +37,7 @@ class Subsession(BaseSubsession):
         for player in self.get_players():
             player.round_payoffs = json.dumps({})
     
-        self.session.vars['enable_compulsory_offer'] = self.session.config.get('enable_compulsory_offer', False)
+        enable_compulsory_offer = self.session.config.get('enable_compulsory_offer', False)
 
 
 
@@ -194,8 +197,9 @@ class Report(ExtraModel):
     NumInAgreement = models.IntegerField()
     Timestamp = models.StringField()
     Time_Since_Round_Start = models.FloatField()
-    Compulsory_offer = models.IntegerField()  # Add this field
+    Compulsory_offer = models.IntegerField()
     Button_ID = models.StringField()
+    Random_Proposer_Treatment=models.IntegerField()
 
 class Main_Interface(Page):
     @staticmethod
@@ -261,6 +265,7 @@ class Main_Interface(Page):
                 g.previousClicker = player_id
                 time_since = float(data['payoffs']['time_since']) 
                 since_beginning = (time_since - session.vars['beginningTime']) / 1000
+
                 currency_decay = data['payoffs']['currency_decay'] 
                 p1_agree = int("clickedByUser1" in who_agrees)
                 p2_agree = int("clickedByUser2" in who_agrees)
@@ -282,6 +287,7 @@ class Main_Interface(Page):
                     P3_Agree=p3_agree,
                     NumInAgreement=len(who_agrees),
                     Timestamp=data['payoffs']['timestamp'],
+                    Random_Proposer_Treatment=0,
                     Compulsory_offer=0,
                     Time_Since_Round_Start=since_beginning
                 )
@@ -350,6 +356,11 @@ class Questionnaire(Page):
 
 class CompulsoryOffer(Page):
 
+    def is_displayed(player):
+        # Only display this page if the treatment is enabled
+        return player.session.config.get('compulsory_offer_treatment', False)
+
+
     @staticmethod
     def before_next_page(player,timeout_happened):
         session = player.session
@@ -372,8 +383,10 @@ class CompulsoryOffer(Page):
         # track active participants in agreement
         if 'activeParticipants' in data:
             active_participants = data['activeParticipants']
-            print(f"[Compulsory Experiment] Active partcipants are: {who_agrees}")
+            print(f"[Compulsory Experiment] Active partcipants are: {active_participants}")
 
+        if 'experiment_started' in data:
+            session.vars['experiment_started'] = float(data['experiment_started'])
 
         session.vars.setdefault('who_in_agreement', [])
         who_agrees = session.vars['who_in_agreement']
@@ -382,6 +395,7 @@ class CompulsoryOffer(Page):
 
         # handle agreement logic
         if 'numInAgreement' in data:
+            print("NUMBER OF PEOPLE ON THE BUTTON JUST CLCIKED IS", data['numInAgreement'])
             if data['numInAgreement'] < 2:
                 if num_agree >= 2 and any(participant in who_agrees for participant in active_participants):
                     who_agrees.clear()
@@ -397,16 +411,24 @@ class CompulsoryOffer(Page):
         # handle payoffs
         if 'payoffs' in data:
             print("payofs is IN THE DATA!!!!!")
-            print(data)
+            buttonClicked=data['payoffs']['button_id']
+            print("Which button was clicked, currently in payoffs",buttonClicked)
+            current_button_state = session.vars['buttonClickStates'][buttonClicked]
+            print("the current button state is",current_button_state)
+
             player_id = data['payoffs']['player_id']
             if player_id == g.previousClicker:
                 g.previousClicker = player_id
                 time_since = float(data['payoffs']['time_since']) 
                 currency_decay = data['payoffs']['currency_decay'] 
+                # Calculate time since the experiment started
+                since_beginning = (time_since - session.vars['experiment_started']) / 1000  # Convert to seconds
+                
+                random_proposer_treatment = 1 if session.config.get('random_proposer_treatment', False) else 0
 
-                p1_agree = int("clickedByUser1" in who_agrees)
-                p2_agree = int("clickedByUser2" in who_agrees)
-                p3_agree = int("clickedByUser3" in who_agrees)
+                p1_agree = int(current_button_state["clickedByUser1"])
+                p2_agree = int(current_button_state["clickedByUser2"])
+                p3_agree = int(current_button_state["clickedByUser3"])
                 print(f"[Compulsory Experiment] Current agreement state (who_agrees): {who_agrees}")
 
                 # create report entry
@@ -422,14 +444,17 @@ class CompulsoryOffer(Page):
                     P1_Agree=p1_agree,
                     P2_Agree=p2_agree,
                     P3_Agree=p3_agree,
-                    NumInAgreement=len(who_agrees),
+                    NumInAgreement=p1_agree+p2_agree+p3_agree,
                     Compulsory_offer=1,
+                    Random_Proposer_Treatment=random_proposer_treatment,
                     Timestamp=data['payoffs']['timestamp'],
+                    Time_Since_Round_Start=since_beginning
                 )
 
                 # update payoffs and currency for each player
                 for player_id in [1, 2, 3]:
                     p = g.get_player_by_id(player_id)
+                    print("Here's the payoffs for player",player_id,":",data['payoffs'].get(f'p{player_id}_points', 0))
                     p_payoff = data['payoffs'].get(f'p{player_id}_points', 0) 
                     p.payoff = p_payoff
                     p.currency = round(p_payoff * currency_decay, 2)
@@ -452,9 +477,23 @@ class CompulsoryOffer(Page):
             current_time = time.time()
             time_since_start = current_time - session.vars.get('compulsory_offer_start_time', current_time)
             player_id = player.id_in_group
-
-
             current_button = data['button_id']
+
+            #button click states 
+            session.vars.setdefault('buttonClickStates', {})
+            session.vars['buttonClickStates'].setdefault(current_button, {
+                'clickedByUser1': False,
+                'clickedByUser2': False,
+                'clickedByUser3': False,
+            })
+
+            # Toggle the state
+            player_key = f'clickedByUser{player_id}'
+            current_state = session.vars['buttonClickStates'][current_button][player_key]
+            session.vars['buttonClickStates'][current_button][player_key] = not current_state
+
+            print(f"Button {current_button} toggled by Player {player_id}: {not current_state}")
+
 
             session.vars.setdefault('playersClicking', [])
             who_clicked = session.vars['playersClicking']
@@ -473,6 +512,7 @@ class CompulsoryOffer(Page):
 
             # Check if all players have clicked
             allPlayersClicked = len(who_clicked) == 3
+            freeze=allPlayersClicked
 
             if allPlayersClicked:
                 print("ALL PLAYERS HAVE CLICKED")
@@ -487,6 +527,8 @@ class CompulsoryOffer(Page):
                             'button_id': selected_button,
                             'player_id': selected_player_id,
                         }
+                        print(f"[DEBUG] buttonClickStates in random proposer: {session.vars['buttonClickStates']}")
+
                     # Return the selected button and notify all players
                         print('selected button is',)
                         return {
@@ -494,6 +536,7 @@ class CompulsoryOffer(Page):
                                 'selected_button': session.vars['selected_button']['button_id'],
                                 'selected_player': session.vars['selected_button']['player_id'],
                                 'players_info': session.vars['whatButtonsClicked'],
+                                'button_id':data['button_id'],
                                 'allPlayersClicked': True,
                             }
                         }
@@ -523,8 +566,8 @@ class Experiment_End(Page):
 
 
 
-
 page_sequence = [WaitingRoom,CompulsoryOffer, Main_Interface, Round_Payoffs] * totalRounds + [Questionnaire, Experiment_End]
+
 
 print(f"Total pages: {len(page_sequence)}")
 for i, page in enumerate(page_sequence):
@@ -532,7 +575,7 @@ for i, page in enumerate(page_sequence):
 
 
 def custom_export(players):
-    yield ['Session_Code','Subject_ID', 'Group_Num', 'Round_Num', 'SubGroup_ID', 'S1_Points', 'S2_Points', 'S3_Points','P1_Agree','P2_Agree','P3_Agree', 'NumInAgreement', 'Timestamp','Compulsory_offer','Time_Since_Round_Start']
+    yield ['Session_Code','Subject_ID', 'Group_Num', 'Round_Num', 'SubGroup_ID', 'S1_Points', 'S2_Points', 'S3_Points','P1_Agree','P2_Agree','P3_Agree', 'NumInAgreement', 'Timestamp','Compulsory_offer','Random_Proposer_Treatment','Time_Since_Round_Start']
     reports = Report.filter()
     for report_no in range(len(reports)):
         yield [
@@ -550,6 +593,7 @@ def custom_export(players):
             reports[report_no].NumInAgreement,
             reports[report_no].Timestamp,
             reports[report_no].Compulsory_offer,
+            reports[report_no].Random_Proposer_Treatment,
             reports[report_no].Time_Since_Round_Start
         ]
     for report in reports:
