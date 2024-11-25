@@ -23,8 +23,8 @@
     <div class="corner-label top-left" id="participant2Label">
       Participant A
       <img
-        src="{{ static 'images/female_icon2.png' }}"
-        class="icon"
+      src="{{ static 'images/male-icon.png' }}"
+      class="icon"
         width="25"
         height="35"
       />
@@ -32,16 +32,16 @@
     <div class="corner-label top-right" id="participant3Label">
       Participant B
       <img
-        src="{{ static 'images/female_icon2.png' }}"
-        class="icon"
+      src="{{ static 'images/male-icon.png' }}"
+      class="icon"
         width="25"
         height="35"
       />
     </div>
     <div class="corner-label bottom" id="youLabel">
       <img
-        src="{{ static 'images/female_icon2.png' }}"
-        class="icon"
+      src="{{ static 'images/male-icon.png' }}"
+      class="icon"
         width="25"
         height="35"
       />
@@ -645,6 +645,11 @@ function liveRecv(data) {
 </script>
 
 <style>
+
+  body {
+      font-family: "sans-serif", sans-serif; 
+  }
+
   .parent-container {
     display: flex;
     align-content: center;

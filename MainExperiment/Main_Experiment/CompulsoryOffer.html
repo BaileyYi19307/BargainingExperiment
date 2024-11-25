@@ -23,7 +23,7 @@
     <div class="corner-label top-left" id="participant2Label">
       Participant A
       <img
-        src="{{ static 'images/female_icon2.png' }}"
+        src="{{ static 'images/male-icon.png' }}"
         class="icon"
         width="25"
         height="35"
@@ -32,7 +32,7 @@
     <div class="corner-label top-right" id="participant3Label">
       Participant B
       <img
-        src="{{ static 'images/female_icon2.png' }}"
+        src="{{ static 'images/male-icon.png' }}"
         class="icon"
         width="25"
         height="35"
@@ -40,7 +40,7 @@
     </div>
     <div class="corner-label bottom" id="youLabel">
       <img
-        src="{{ static 'images/female_icon2.png' }}"
+        src="{{ static 'images/male-icon.png' }}"
         class="icon"
         width="25"
         height="35"
@@ -49,6 +49,8 @@
     </div>
   </div>
 </div>
+<button class="first_offer" type="button">Submit First Offer</button>
+
 
 <script>
 
@@ -262,7 +264,7 @@
                           const randomBtnState = buttonClickStates[data.selected_button] || {};
                           randomBtnState[`clickedByUser${data.selected_player}`] = true;
                           updateButtonAppearance(randomButton, randomBtnState);
-                          
+
                       }
 
                       // Each player also sees their own clicked button
@@ -400,7 +402,7 @@
               let prevButtonStates = {};  // stores previous states for all buttons
 
               function monitorClickAgreement(buttonID) {
-   
+
 
                   // calculate the total number of clicks on the current button
                   console.log("Button click states for",buttonID," are:",buttonClickStates[buttonID]);
@@ -673,6 +675,10 @@
 </script>
 
 <style>
+  body {
+    font-family: "sans-serif", sans-serif;
+  }
+
   .otree-btn-next {
     display: none;
   }
@@ -682,6 +688,12 @@
     align-content: center;
     justify-content: center;
     min-width: 500px;
+    /* flex-direction: column; */
+  }
+
+
+  .first_offer{
+    width:100px;
   }
 
   #triangleContainer {
@@ -697,7 +709,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
 
+  .icon {
+    background-color: transparent;
   }
 
   .icon1,

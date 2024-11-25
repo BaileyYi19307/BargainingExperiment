@@ -206,7 +206,7 @@ class Main_Interface(Page):
     def vars_for_template(player):
         session = player.session
         # retrieve the stored compulsory offer data
-        compulsory_offer_data = session.vars.get('whatButtonsClicked', {})
+        compulsory_offer_data = session.vars.get('whosClickedWhat', {})
 
 
     @staticmethod
@@ -217,7 +217,7 @@ class Main_Interface(Page):
         #return compulsory data 
         if 'send_compulsory_data' in data:
             print("compulsory data in data")
-            compulsory_offer_data = session.vars.get('whatButtonsClicked', {})
+            compulsory_offer_data = session.vars.get('whosClickedWhat', {})
             simulated_clicks = [
                 {
                     'button_id': button_id,
@@ -371,7 +371,7 @@ class CompulsoryOffer(Page):
     def before_next_page(player,timeout_happened):
         session = player.session
         print("The buttons clicked during the compulsory offer round were:")
-        print(session.vars['whatButtonsClicked'])
+        print(session.vars['whosClickedWhat'])
         session.vars['main_experiment_start_time'] = time.time()
         
 
@@ -504,9 +504,10 @@ class CompulsoryOffer(Page):
             session.vars.setdefault('playersClicking', [])
             who_clicked = session.vars['playersClicking']
 
-            session.vars.setdefault('whatButtonsClicked',{})
+            session.vars.setdefault('whosClickedWhat',{})
             #update what button clicked
-            session.vars['whatButtonsClicked'][player.id_in_group]=current_button
+            session.vars['whosClickedWhat'][player.id_in_group]=current_button
+            
 
             # Add the current player to the list if they haven't clicked yet
             if player.id_in_group not in who_clicked:
@@ -527,8 +528,8 @@ class CompulsoryOffer(Page):
                 if session.config.get('random_proposer_treatment', False):
                     # Randomly select one button to display as the "random proposer"
                     if 'selected_button' not in session.vars:
-                        selected_player_id = random.choice(list(session.vars['whatButtonsClicked'].keys()))
-                        selected_button = session.vars['whatButtonsClicked'][selected_player_id]
+                        selected_player_id = random.choice(list(session.vars['whosClickedWhat'].keys()))
+                        selected_button = session.vars['whosClickedWhat'][selected_player_id]
                         session.vars['selected_button'] = {
                             'button_id': selected_button,
                             'player_id': selected_player_id,
@@ -541,17 +542,17 @@ class CompulsoryOffer(Page):
                             0: {
                                 'selected_button': session.vars['selected_button']['button_id'],
                                 'selected_player': session.vars['selected_button']['player_id'],
-                                'players_info': session.vars['whatButtonsClicked'],
+                                'players_info': session.vars['whosClickedWhat'],
                                 'button_id':data['button_id'],
                                 'allPlayersClicked': True,
                             }
                         }
                 #otherwise, just let everyone know which buttons clicked
-                return {0: {'button_id': data['button_id'], 'player_id': player.id_in_group, 'players_info': session.vars['whatButtonsClicked'],'allPlayersClicked':allPlayersClicked}}
+                return {0: {'button_id': data['button_id'], 'player_id': player.id_in_group, 'players_info': session.vars['whosClickedWhat'],'allPlayersClicked':allPlayersClicked}}
             
-            print("4) returning button_id",data['button_id'],"clicked by",player.id_in_group,"with",session.vars['whatButtonsClicked'],"and if all players clicked or not",allPlayersClicked)
+            print("4) returning button_id",data['button_id'],"clicked by",player.id_in_group,"with",session.vars['whosClickedWhat'],"and if all players clicked or not",allPlayersClicked)
             # Otherwise, return only the current player's click info
-            return {0: {'button_id': data['button_id'], 'player_id': player.id_in_group, 'players_info': session.vars['whatButtonsClicked'],'allPlayersClicked':allPlayersClicked}}
+            return {0: {'button_id': data['button_id'], 'player_id': player.id_in_group, 'players_info': session.vars['whosClickedWhat'],'allPlayersClicked':allPlayersClicked}}
 
 class Experiment_End(Page):
     @staticmethod

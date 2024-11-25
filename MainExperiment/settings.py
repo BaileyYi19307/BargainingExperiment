@@ -3,16 +3,17 @@ from os import environ
 
 SESSION_CONFIGS = [
     dict(
-        # put all the sessions you want to run here
         name="Main_Experiment",
         display_name="show one button",
         app_sequence=['Main_Experiment'],
         num_demo_participants=3,
-        random_proposer_treatment=False,  # Enable random proposer mode
-        compulsory_offer_treatment=True,  # Enable compulsory offer
+        random_proposer_treatment=True,  # enable random proposer mode
+        compulsory_offer_treatment=True,  # enable compulsory offer
 
     )
 ]
+
+
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
 # in SESSION_CONFIGS, except those that explicitly override it.
@@ -24,7 +25,7 @@ SESSION_CONFIG_DEFAULTS = dict(
 )
 
 PARTICIPANT_FIELDS = ['expiry']
-SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whatButtonsClicked','buttonClickStates','experiment_started']
+SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whosClickedWhat','buttonClickStates','experiment_started']
 
 # ISO-639 code
 # for example: de, fr, ja, ko, zh-hans
