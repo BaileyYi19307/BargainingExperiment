@@ -1,0 +1,261 @@
+{{ block title }} {{ endblock }} {{ block content }}
+<div class="page-container">
+    <div class="instructions">
+        <h2>Instructions</h2>
+        <p>
+            Before you interact with others as explained previously, you have a chance to obtain a secure
+            payoff that does not depend on your interaction with others.
+        </p>
+        <p>
+            Below is a list of choices between interacting with others as explained before (left choice) or a
+            fixed payoff amount (right choice). For each row below, you must select whether you prefer to
+            interact or the fixed payoff. The computer will randomly draw which row will be selected.
+        </p>
+        <p>
+            You will still need to interact with others to divide the {{totalPoints}} points (${{currency}}) as explained in the
+            previous instructions. However, at the end of the experiment, there is a 50% chance that your
+            payoff is determined by your choice in the list below and 50% that it will be determined by the
+            interactions. You will be informed at the end of the experiment which one counts.
+        </p>
+    </div>
+
+    <div class="mpl-container">
+        <div id="mpl-rows"></div>
+    </div>
+
+    <div id="error-message" style="display: none; color: red; text-align: center; margin-top: 10px;">
+        Please make a selection for every row before submitting
+    </div>
+
+    <button id="submit-button" type="button" onclick="submitChoices()">Submit Choices</button>
+</div>
+
+<script>
+const maxPayoff = 54;
+const numChoices = 54; 
+
+const mplContainer = document.getElementById("mpl-rows");
+const mplRows = [];
+
+//create rows for multiple price list
+for (let i = 0; i <= numChoices; i++) {
+    const fixedPayoff = i; 
+    mplRows.push({
+        row: i,
+        left: "Negotiation",
+        right: `$${fixedPayoff}`,
+        selected: null, //track user's choice for this row
+    });
+
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "mpl-row";
+    rowDiv.id = `row-${i}`;
+    rowDiv.innerHTML = `
+        <button class="mpl-button left-option" id="left-${i}" type="button" onclick="selectOption(${i}, 'left')">Negotiation</button>
+        <span class="mpl-label">or</span>
+        <button class="mpl-button right-option" id="right-${i}" type="button" onclick="selectOption(${i}, 'right')">${mplRows[i].right}</button>
+    `;
+    mplContainer.appendChild(rowDiv);
+}
+
+let switchChoicePoint = { row: -1, option: "none" }; //track user's switching point (where they select the right option first)
+
+const choices = Array(numChoices).fill(null); //store user choices
+
+
+//handle user selection for a row
+function selectOption(row, choice) {
+    const leftButton = document.querySelector(`#row-${row} .left-option`);
+    const rightButton = document.querySelector(`#row-${row} .right-option`);
+
+    if (choice === "left") {
+        if (row === switchChoicePoint.row && switchChoicePoint.option === "right") {
+            //if this row is current switch point and user changes to left, reset switch point
+            switchChoicePoint.row = -1;
+            switchChoicePoint.option = "none";
+            leftButton.classList.add("selected");
+            rightButton.classList.remove("selected");
+            updateAutoFill(row, "left"); //auto-update rows below the switch point
+        }
+        leftButton.classList.add("selected");
+        rightButton.classList.remove("selected");
+        choices[row] = -1; //record user's choice as left
+    } else if (choice === "right") {
+        leftButton.classList.remove("selected");
+        rightButton.classList.add("selected");
+        choices[row] = row; //record choice as right
+        switchChoicePoint.row = row; 
+        switchChoicePoint.option = "right";
+        updateAutoFill(row, "right"); //auto-update rows below the switch point
+    }
+}
+
+//automatically update subsequent rows based on current switch point
+function updateAutoFill(switchRow, switchChoice) {
+    const rows = document.querySelectorAll(".mpl-row");
+
+    rows.forEach((rowDiv) => {
+        const rowNum = parseInt(rowDiv.id.split("-")[1]);
+        const leftButton = document.getElementById(`left-${rowNum}`);
+        const rightButton = document.getElementById(`right-${rowNum}`);
+
+        if (rowNum > switchRow) {
+            //for subsequent rows after switch point
+            if (switchChoice === "right") {
+                leftButton.classList.remove("selected");
+                rightButton.classList.add("selected");
+                choices[rowNum] = rowNum;
+                leftButton.disabled = true; //disable left button
+                rightButton.disabled=true;
+            } else if (switchChoice === "left") {
+                leftButton.classList.remove("selected");
+                rightButton.classList.remove("selected");
+                choices[rowNum] = null; //reset choice
+                leftButton.disabled = false;
+                rightButton.disabled=false;
+            }
+        } else if (rowNum === switchRow) {
+            //handle updates for switch row itself
+            if (switchChoice === "right") {
+                leftButton.disabled = false; //make sure left button in the row is enabled
+            } else if (switchChoice === "left") {
+                choices[switchRow] = -1; 
+            }
+        }
+    });
+}
+
+function submitChoices(event) {
+    // sheck if all rows have a selection first
+    const errorMessage = document.getElementById("error-message");
+    if (choices.some((choice) => choice === null)) {
+        errorMessage.style.display = "block"; // show error message
+        return;
+    } else {
+        errorMessage.style.display = "none"; // hide error message
+
+        // send the choices to the server
+        liveSend({
+            mpl_choices: choices,
+        });
+        document.querySelector('form').submit();
+    }
+}
+</script>
+
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        color: #333;
+    }
+    
+    .page-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .instructions {
+        margin-bottom: 20px;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    
+    .instructions h2 {
+        margin-bottom: 10px;
+        font-size: 20px;
+        color: #007BFF;
+        text-align: center;
+    }
+    
+    .mpl-container {
+        margin: 20px 0;
+        padding: 10px;
+        background-color: #f1f1f1;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+    }
+    
+    .mpl-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .mpl-row:nth-child(odd) {
+        background-color: #f8f8f8;
+    }
+    
+    .mpl-row button {
+        padding: 10px 20px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f4f4f4;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+    
+    .mpl-row button:hover {
+        background-color: #e2e2e2;
+    }
+    
+    .mpl-row button.selected {
+        background-color: #007BFF;
+        color: white;
+        transform: scale(1.05);
+        font-weight: bold;
+    }
+    
+    .mpl-row button.disabled {
+        background-color: #ccc;
+        color: #777;
+        cursor: not-allowed;
+    }
+    
+    .mpl-label {
+        flex: 1;
+        text-align: center;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    
+    #submit-button {
+        display: block;
+        margin: 20px auto;
+        padding: 12px 40px;
+        font-size: 18px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s, box-shadow 0.3s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    #submit-button:hover {
+        background-color: #218838;
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    #submit-button:active {
+        background-color: #1e7e34;
+        transform: translateY(2px);
+    }
+    
+    </style>
+    
+
+ {{ formfields }} {{ endblock }}

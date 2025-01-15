@@ -6,6 +6,9 @@ SESSION_CONFIGS = [
         display_name="Tutorial",
         app_sequence=['Tutorial'],
         num_demo_participants=3,
+        totalNodes=66,  #number of nodes in the triangle
+        totalPoints=18,  #total points to distribute 
+        initialCurrencyValue=3.00, #starting currency value
     )
 ]
 

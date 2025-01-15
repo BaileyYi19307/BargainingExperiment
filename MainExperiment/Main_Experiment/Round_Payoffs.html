@@ -1,55 +1,158 @@
 {{ block title }}
+<h1 style="text-align: center; font-family: 'Inter', sans-serif; font-weight: bold; margin: 20px 0; color: #333;">
     Your Results
+</h1>
 {{ endblock }}
 
 {{ block content }}
-    <div class="content-container">
-        <p class="results-info">You get: <span class="highlight">{{ player.payoff }}</span></p>
-        <p class="results-info">Original Euros Earned: <span class="highlight">{{ player.ogCurrency }}</span></p>
-        <p class="results-info">Final Euros Earned (after decay): <span class="highlight">{{ player.currency }}</span></p>
-        <button id="next-button" class="next-button">Progress to Next Round</button>
+<div class="results-container">
+    <div class="exchange-rate-box">
+        <p class="rate-title">Exchange Rate</p>
+        <p class="rate-highlight">1 Point = 3 USD</p>
     </div>
+    <div class="results-content">
+        <div class="results-info">
+            <p>Points Earned:</p>
+            <p class="highlight-large">{{ player.pointsEarned }}</p>
+        </div>
+        <div class="conversion-section">
+            <p class="results-info">Conversion Calculation:</p>
+            <p class="calculation">
+                Points Earned ({{ player.pointsEarned }}) × 3 USD = 
+                <span class="highlight">{{ player.ogCurrency }} USD</span>
+            </p>
+        </div>
+        <div class="euros-earned">
+            <p class="euros-label">USD Earned:</p>
+            <p class="euros-highlight">${{ player.ogCurrency }} USD</p>
+        </div>
+    </div>
+    <button id="next-button" class="next-button">Continue to Next Round</button>
+</div>
 
-    <script>
-        document.getElementById('next-button').addEventListener('click', function() {
-            liveSend({next_clicked: true});
-        });
-    </script>
-    
-    <style>
-        .content-container {
-            text-align: center;
-            padding: 20px;
-            background-color: #f7f7f7;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin: auto;
-            max-width: 500px;
-        }
-        .results-info {
-            font-size: 18px;
-            margin: 10px 0;
-        }
-        .highlight {
-            font-weight: bold;
-            color: #333;
-        }
-        .next-button {
-            background-color: #4CAF50; /* Green */
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 20px 2px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        .next-button:hover {
-            background-color: #45a049;
-        }
-    </style>
+<script>
+    document.getElementById('next-button').addEventListener('click', function () {
+        liveSend({ next_clicked: true });
+    });
+</script>
+
+<style>
+    body {
+        background: #f5f7fa;
+        font-family: 'Inter', sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .results-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 25px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .exchange-rate-box {
+        text-align: center;
+        background-color: #f0f4f8;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    .rate-title {
+        font-size: 16px;
+        color: #555;
+        margin: 0;
+    }
+
+    .rate-highlight {
+        font-size: 18px;
+        font-weight: bold;
+        color: #0056b3;
+        margin-top: 5px;
+    }
+
+    .results-content {
+        text-align: center;
+        width: 100%;
+    }
+
+    .results-info p {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+    }
+
+    .highlight-large {
+        font-size: 26px;
+        font-weight: bold;
+        color: #0056b3;
+        margin: 10px 0 20px;
+    }
+
+    .conversion-section {
+        margin: 15px 0;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 8px;
+        border: 1px solid #dce3eb;
+    }
+
+    .calculation {
+        font-size: 16px;
+        color: #555;
+        font-style: italic;
+        margin: 10px 0;
+    }
+
+    .highlight {
+        font-weight: bold;
+        color: #0056b3;
+    }
+
+    .euros-earned {
+        margin-top: 20px;
+        padding: 20px;
+        background: #edf6ee;
+        border: 2px solid #52b788;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .euros-label {
+        font-size: 18px;
+        color: #276749;
+        margin-bottom: 5px;
+    }
+
+    .euros-highlight {
+        font-size: 28px;
+        font-weight: bold;
+        color: #276749;
+    }
+
+    .next-button {
+        margin-top: 30px;
+        background-color: #0056b3;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .next-button:hover {
+        background-color: #003d80;
+    }
+</style>
 {{ endblock }}

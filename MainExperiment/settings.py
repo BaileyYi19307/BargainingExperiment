@@ -4,12 +4,15 @@ from os import environ
 SESSION_CONFIGS = [
     dict(
         name="Main_Experiment",
-        display_name="show one button",
+        display_name="Triangle Experiment",
         app_sequence=['Main_Experiment'],
         num_demo_participants=3,
-        random_proposer_treatment=True,  # enable random proposer mode
         compulsory_offer_treatment=True,  # enable compulsory offer
-
+        totalNodes=66,  #number of nodes in the triangle
+        totalPoints=18,  #total points to distribute 
+        initialCurrencyValue=3.00, #starting currency value
+        ratificationTime=10, #time for ratification/agreement countdown
+        timeLimit=3, #time limit for the experiment round
     )
 ]
 
@@ -25,7 +28,7 @@ SESSION_CONFIG_DEFAULTS = dict(
 )
 
 PARTICIPANT_FIELDS = ['expiry']
-SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whosClickedWhat','buttonClickStates','experiment_started']
+SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whosClickedWhat','buttonClickStates','experiment_started', 'submittedFirstOffer']
 
 # ISO-639 code
 # for example: de, fr, ja, ko, zh-hans

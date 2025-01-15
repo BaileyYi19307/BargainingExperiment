@@ -6,7 +6,7 @@ Your app description
 """
 
 totalRounds = 5
-random_grouping = models.BooleanField(initial = True)          # true is random
+random_grouping = models.BooleanField(initial = True)# true is random
 
 
 class C(BaseConstants):
@@ -16,8 +16,6 @@ class C(BaseConstants):
 
 
 class Subsession(BaseSubsession):
-
-
     def creating_session(self):
         if 'taskList' not in self.session.vars:
             self.session.vars['taskList'] = {}
@@ -41,13 +39,27 @@ class Group(BaseGroup):
 class Player(BasePlayer):
     ogCurrency = models.FloatField(initial=0)
     currency = models.FloatField(initial=0)
-    custom_round_num = models.IntegerField(initial=1)       # manual round number
+    custom_round_num = models.IntegerField(initial=1)# manual round number
     repeat_tutorial = models.BooleanField(initial=False)
 
 class TutorialPage1(Page):
-    pass
+    @staticmethod
+    def vars_for_template(self):
+        return {
+            'totalNodes': self.session.config.get('totalNodes', 0),  
+            'totalPoints': self.session.config.get('totalPoints', 0),  
+            'initialCurrencyValue': self.session.config.get('initialCurrencyValue', 1),  
+        }
+
 
 class TutorialPage2(Page):
+    @staticmethod
+    def vars_for_template(self):
+        return {
+            'totalNodes': self.session.config.get('totalNodes', 0),  
+            'totalPoints': self.session.config.get('totalPoints', 0),  
+            'initialCurrencyValue': self.session.config.get('initialCurrencyValue', 1),  
+        }
     
     @staticmethod
     def live_method(player, data):
@@ -190,6 +202,13 @@ class TutorialPage2(Page):
 
 
 class TutorialPage3(Page):
+    @staticmethod
+    def vars_for_template(self):
+        return {
+            'totalNodes': self.session.config.get('totalNodes', 0),  
+            'totalPoints': self.session.config.get('totalPoints', 0),  
+            'initialCurrencyValue': self.session.config.get('initialCurrencyValue', 1),  
+        }
     @staticmethod
     def live_method(player,data):
         if 'button_clicked' in data:
