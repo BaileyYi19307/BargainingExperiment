@@ -646,6 +646,8 @@ class Experiment_End(Page):
             # Randomly decide between negotiation and MPL
             use_negotiation = random.choice([True, False])
             round_detail = {"round": round_num, "show_points": False}  # Default show_points to False
+            fixed_money = None  
+
 
             if use_negotiation:
                 # Negotiation chosen
@@ -735,7 +737,7 @@ class MLP(Page):
             #save back to model
             player.all_mpl_choices = json.dumps(all_choices)
 
-
+#MLP,WaitingRoom,CompulsoryOffer, 
 #Questionnaire, 
 page_sequence = [MLP,WaitingRoom,CompulsoryOffer, Main_Interface, Round_Payoffs] * totalRounds + [Experiment_End]
 
