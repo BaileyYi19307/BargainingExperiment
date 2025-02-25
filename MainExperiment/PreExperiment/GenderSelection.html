@@ -1,0 +1,177 @@
+{{ block title }}
+{{ endblock }}
+
+{{ block content }}
+    <div class="gender-selection-container">
+        <div class="gender-card">
+            <h2 class="title">Select Your Gender</h2>
+            <p class="subtitle">Please choose your gender before proceeding.</p>
+
+            <form method="post">
+                
+                <div class="gender-options">
+                    <label class="gender-option" for="male">
+                        <input type="radio" name="gender" id="male" value="Male" required>
+                        <div class="option-content">
+                            <img src="{{ static 'images/maleicon.png' }}" alt="Male Icon" class="gender-icon" >
+                            <span class="gender-text">Male</span>
+                        </div>
+                    </label>
+
+                    <label class="gender-option" for="female">
+                        <input type="radio" name="gender" id="female" value="Female" required>
+                        <div class="option-content">
+                            <img src="{{ static 'images/femaleicon.png' }}" alt="Female Icon" class="gender-icon">
+                            <span class="gender-text">Female</span>
+                        </div>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn">Continue</button>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        :root {
+            --primary-bg: #f2f4f6;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --highlight-bg: #f8f9fa;
+            --text-color: #333;
+            --primary-color: #007bff;
+            --hover-bg: #e9f2ff;
+            --shadow-light: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;  
+            overflow-y: auto;  
+        }
+
+        .gender-selection-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .option-content{
+            width: 60px;
+            height: 80px;
+        }
+
+        .gender-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px 40px;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            border: 2px solid var(--border-color);
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .gender-options {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .gender-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--highlight-bg);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 320px;
+            gap: 12px;
+        }
+
+        .gender-option input[type="radio"] {
+            display: none;
+        }
+
+        .option-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .gender-option:hover {
+            border-color: var(--primary-color);
+            background-color: var(--hover-bg);
+        }
+
+        .gender-option.selected {
+            border-color: var(--primary-color);
+            background-color: var(--hover-bg);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+        }
+
+        .gender-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .gender-text {
+            font-weight: bold;
+            color: var(--text-color);
+            font-size: 18px;
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 18px;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: var(--shadow-light);
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+
+    <script>
+        document.querySelectorAll('.gender-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.gender-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+    </script>
+{{ endblock }}

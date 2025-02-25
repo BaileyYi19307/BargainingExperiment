@@ -12,7 +12,7 @@
             interact or the fixed payoff. The computer will randomly draw which row will be selected.
         </p>
         <p>
-            You will still need to interact with others to divide the {{totalPoints}} points (${{currency}}) as explained in the
+            You will still need to interact with others to divide the ${{totalMoney}} USD as explained in the
             previous instructions. However, at the end of the experiment, there is a 50% chance that your
             payoff is determined by your choice in the list below and 50% that it will be determined by the
             interactions. You will be informed at the end of the experiment which one counts.
@@ -79,7 +79,7 @@ function selectOption(row, choice) {
         }
         leftButton.classList.add("selected");
         rightButton.classList.remove("selected");
-        choices[row] = -1; //record user's choice as left
+        choices[row] = "Negotiation"; //record user's choice as left
     } else if (choice === "right") {
         leftButton.classList.remove("selected");
         rightButton.classList.add("selected");
@@ -119,7 +119,7 @@ function updateAutoFill(switchRow, switchChoice) {
             if (switchChoice === "right") {
                 leftButton.disabled = false; //make sure left button in the row is enabled
             } else if (switchChoice === "left") {
-                choices[switchRow] = -1; 
+                choices[switchRow] = "Negotiation"; 
             }
         }
     });
@@ -133,7 +133,7 @@ function submitChoices(event) {
         return;
     } else {
         errorMessage.style.display = "none"; // hide error message
-
+        console.log(choices)
         // send the choices to the server
         liveSend({
             mpl_choices: choices,

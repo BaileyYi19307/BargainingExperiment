@@ -6,25 +6,9 @@
 
 {{ block content }}
 <div class="results-container">
-    <div class="exchange-rate-box">
-        <p class="rate-title">Exchange Rate</p>
-        <p class="rate-highlight">1 Point = 3 USD</p>
-    </div>
-    <div class="results-content">
-        <div class="results-info">
-            <p>Points Earned:</p>
-            <p class="highlight-large">{{ player.pointsEarned }}</p>
-        </div>
-        <div class="conversion-section">
-            <p class="results-info">Conversion Calculation:</p>
-            <p class="calculation">
-                Points Earned ({{ player.pointsEarned }}) × 3 USD = 
-                <span class="highlight">{{ player.ogCurrency }} USD</span>
-            </p>
-        </div>
         <div class="euros-earned">
-            <p class="euros-label">USD Earned:</p>
-            <p class="euros-highlight">${{ player.ogCurrency }} USD</p>
+            <p class="euros-label">Payoff Earned:</p>
+            <p class="euros-highlight">{{ player.payoff }} USD</p>
         </div>
     </div>
     <button id="next-button" class="next-button">Continue to Next Round</button>

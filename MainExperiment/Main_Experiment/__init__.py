@@ -4,27 +4,16 @@ import random
 import time
 
 doc = """
-Your app description
+Main experiment
 """
-
-totalRounds = 3 #how many iterations of the experiment
-howManyRounds=2 #how many rounds selected for final payout
-
-
 random_grouping = models.BooleanField(initial = True)  # true is random
-rounds_payment = random.sample(range(1, totalRounds + 1), howManyRounds)
-print(f"Selected payment rounds: {rounds_payment}")
-
-tmp = 0
 
 class C(BaseConstants):
     NAME_IN_URL = 'Main_Experiment'
     PLAYERS_PER_GROUP = None
-    NUM_ROUNDS = 1          # number of cycles of the entire game
+    NUM_ROUNDS = 3         
     NUM_ROUNDS_FOR_PAYMENT = 3
 
-
-global enable_compuslory_offer
 
 class Subsession(BaseSubsession):
     def creating_session(self):
@@ -33,13 +22,6 @@ class Subsession(BaseSubsession):
         else:
             self.group_fixed()
 
-        self.session.vars['payment_rounds'] = rounds_payment
-
-        for player in self.get_players():
-            player.round_payoffs = json.dumps({})
-    
-        enable_compulsory_offer = self.session.config.get('enable_compulsory_offer', False)
-
     def group_fixed(self):
         players = self.get_players()
         group_size = 3
@@ -47,138 +29,10 @@ class Subsession(BaseSubsession):
         self.set_group_matrix(group_matrix)
 
 class Group(BaseGroup):
-    button_clicked=models.BooleanField(initial=False)
     previousClicker=models.IntegerField(initial=0)
 
 class Player(BasePlayer):
-    ogCurrency = models.FloatField(initial=0)
-    currency = models.FloatField(initial=0)
-    custom_round_num = models.IntegerField(initial=1)
-    round_payoffs = models.LongStringField(initial='{}')
-    question_6_bonus = models.CurrencyField(initial = 1) #changeable question 6 variable
-    countDownStarted = models.BooleanField(initial=False)  # Add this line for countdown tracking
-    firstOfferSubmitted = models.StringField(initial=None)  # Add this line for countdown tracking
-    all_mpl_choices = models.LongStringField(initial='{}')  # Store choices from all rounds as JSON
-    all_round_currencies = models.LongStringField(initial='{}')  # Store all round currencies as JSON
-    pointsEarned = models.FloatField(initial=0)  # Default to 0
-
-
-
-    # Question 5
-    noticed_icons = models.StringField(
-        label="5. Did you notice the icons with the sex of the participants on the screen when negotiating how to split the money?",
-        choices=["Yes", "No"],
-        widget=widgets.RadioSelect
-    )
-
-    # Question 6
-    group_composition = models.StringField(
-        label=f"6. What was the composition of the other two members in your group?  If you did not notice the icons, please provide your best guess. If you answer this question correctly you will earn a bonus of ${question_6_bonus}",
-        choices=["2 women", "2 men", "1 man and 1 woman"]
-    )
-
-    # Question 7
-    preferences = models.StringField(
-        label="7. Which of the following best describes your preferences:",
-        choices=[
-            "I prefer to make the first offer in the game.",
-            "I prefer to wait and see what others will propose."
-        ]
-    )
-
-    # Question 8
-    acceptability_scale = models.StringField(
-        label="8. If two people are in agreement and are assigning me 0 token:",
-        choices=[
-            "I actively try to break the agreement by making an offer to share the money with only one them.",
-            "I actively try to break the agreement by making an offer that shares the money with all players.",
-            "I do no try to break the agreement."
-        ]
-    )
-
-    # Question 9
-    zero_acceptability = models.IntegerField(
-        label="9. Suppose that two people are in agreement and are assigning me 0 tokens. On a scale from 1 to 10, how socially acceptable is it to try to break the agreement between them?",
-        min=0, max=10
-    )
-
-    # Question 10
-    masculinity_scale = models.IntegerField(
-        label="10. In general, how do you see yourself? Where would you put yourself on this scale (0-10) from “0 = Very masculine” to “10 = Very feminine”? Please indicate your response below.",
-        min=0, max=10
-    )
-
-    # Question 11
-    q11a_acceptability_split = models.IntegerField(
-        label="11. Consider the following situation: 'A group of three people are negotiating how to split a sum of money. At least two of them must agree on the split.' addspace a. In your view, how acceptable is it to split the money only between two people, with the third person getting nothing?",
-        min=1, max=7,
-        help_text="1 = completely unacceptable, 7 = completely acceptable"
-    )
-    q11b_likelihood_split = models.IntegerField(
-        label="b. If three people in this country were to find themselves in this situation, how likely is it that the money will be split only between two of them, with the third person getting nothing?",
-        min=1, max=7,
-        help_text="1 = extremely unlikely, 7 = extremely likely"
-    )
-
-    # Question 12
-    q12a_board_acceptability_split = models.IntegerField(
-        label="12. Consider the following situation: 'A group of three members of a company's board are tasked with negotiating how to split a sum of 'bonus' money.At least two of them must agree on the split. addspace a. In your view, how acceptable is it to split the money only between two people, with the third person getting nothing?",
-        min=1, max=7,
-        help_text="1 = completely unacceptable, 7 = completely acceptable"
-    )
-    q12b_board_likelihood_split = models.IntegerField(
-        label="b. If three people in this country were to find themselves in this situation, how likely is it that the money will be split only between two of them, with the third person getting nothing?",
-        min=1, max=7,
-        help_text="1 = extremely unlikely, 7 = extremely likely"
-    )
-
-    # Question 13
-    risk_willingness = models.IntegerField(
-        label="13. On a scale from 1 to 10 how willing are you to take risks in general? (1 = not at all willing to take risks, and 10 = very willing to take risks)",
-        min=1, max=10
-    )
-
-    # Question 14
-    negotiation_enjoyment = models.IntegerField(
-        label="14. On a scale from 1 to 10 how much do you enjoy negotiations in general? (1 = do not enjoy negotiations, and 10 = enjoy negotiations a lot)",
-        min=1, max=10
-    )
-
-    # Question 15
-    winning_enjoyment = models.IntegerField(
-        label="15. On a scale from 1 to 10 how much do you enjoy winning? (1 = do not enjoy winning, 10 = enjoy winning a lot)",
-        min=1, max=10
-    )
-
-    # Question 16
-    negotiation_self_view = models.IntegerField(
-        label="16. On a scale from 1 to 10 how do you see yourself? (1 = I consider myself to be a bad negotiator, 10 = I consider myself an excellent negotiator)",
-        min=1, max=10
-    )
-
-    # Question 17
-    unemployment_belief = models.IntegerField(
-        label="17. In the following statements, select the position in the 1 to 10 scale that best represents you. &nbsp; a. People who are unemployed ought to take any offered job to keep welfare support",
-        min=1, max=10,
-        help_text="1 = People who are unemployed ought to take any offered job to keep welfare support, 10 = People who are unemployed ought to be able to refuse any job they do not want"
-    )
-    competition_belief = models.IntegerField(
-        label="b. Competition is good",
-        min=1, max=10,
-        help_text="1 = Competition is good, 10 = Competition is damaging"
-    )
-    income_distribution_belief = models.IntegerField(
-        label="c. The income distribution ought to be more equal",
-        min=1, max=10,
-        help_text="1 = The income distribution ought to be more equal, 10 = There ought to be more economic incentive for the individual to work harder"
-    )
-    privatization_belief = models.IntegerField(
-        label="d. More public companies ought to be privatized",
-        min=1, max=10,
-        help_text="1 = More public companies ought to be privatized, 10 = More companies ought to be state-owned"
-    )
-
-
+    gender = models.StringField(choices=["Male", "Female"])
 
 # PAGES
 class WaitingRoom(WaitPage):
@@ -207,13 +61,18 @@ class Report(ExtraModel):
 
 class Main_Interface(Page):
     @staticmethod
-    def vars_for_template(self):
-        return{
-            'totalNodes':self.session.config['totalNodes'],  
-            'totalPoints':self.session.config['totalPoints'],
-            'initialCurrencyValue':self.session.config['initialCurrencyValue'],
-            'ratificationTime':self.session.config['ratificationTime'],
-            'timeLimit':self.session.config['timeLimit'],
+    def vars_for_template(player):
+        group = player.group.get_players() 
+        player.gender=player.participant.gender
+        players_data = {p.id_in_group: p.participant.gender for p in group}
+
+        return {
+            'player_id': player.id_in_group,  
+            'players_data': players_data, 
+            'totalNodes': player.session.config['totalNodes'],  
+            'totalMoney': player.session.config['totalMoney'],
+            'ratificationTime': player.session.config['ratificationTime'],
+            'timeLimit': player.session.config['timeLimit'],
         }
 
 
@@ -285,7 +144,7 @@ class Main_Interface(Page):
                     Session_Code=groupId.session.code,
                     Subject_ID=player.participant.code,
                     Group_Num=groupId.id,
-                    Round_Num=player.custom_round_num,
+                    Round_Num=player.round_number,
                     SubGroup_ID=player_id,
                     S1_Points=data['payoffs']['p1_points'], 
                     S2_Points=data['payoffs']['p2_points'], 
@@ -304,21 +163,8 @@ class Main_Interface(Page):
                     p = groupId.get_player_by_id(player_id)
                     p_payoff = data['payoffs'].get(f'p{player_id}_points', 0)
 
-                    p.pointsEarned = round(p_payoff, 2)  # Assign the rounded payoff to pointsEarned
                     # Round all calculations to two decimal places
-                    p.payoff = p_payoff
-                    p.currency = round(p_payoff * currency_decay, 2)
-                    p.ogCurrency = round(p_payoff * 3.00, 2)
-
-                # store round payoffs
-                round_num = player.round_number
-                round_payoffs = json.loads(player.round_payoffs)
-                round_payoffs[str(round_num)] = {
-                    'payoff': float(player.payoff),
-                    'ogCurrency': float(player.ogCurrency),
-                    'currency': float(player.currency)
-                }
-                player.round_payoffs = json.dumps(round_payoffs)
+                    p.payoff = round(p_payoff, 2)
 
         # handle button click event
         if 'button_clicked' in data:
@@ -331,21 +177,17 @@ class Main_Interface(Page):
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # fetch the current round's currency
-        current_round = player.custom_round_num
-        current_currency = player.currency
-        
-        # load existing round currencies
-        all_round_currencies = json.loads(player.all_round_currencies)
-        
-        # update with the current round's data
-        all_round_currencies[str(current_round)] = current_currency
-        
-        # save back to the field
-        player.all_round_currencies = json.dumps(all_round_currencies)
-        
-        # debugging output
-        print(f"Updated All Round Currencies: {all_round_currencies}")
+        prev_payoffs = player.participant.round_payoffs
+
+        # Store payoffs for the current round
+        prev_payoffs[player.round_number] = {
+            p.id_in_group: float(p.payoff) for p in player.group.get_players()
+        }
+
+        # Save back into participant.vars
+        player.participant.round_payoffs = prev_payoffs
+        print(f"DEBUG: Updated Payoffs → {player.participant.round_payoffs}")
+
 
         #reset before next round:
         session = player.session
@@ -354,16 +196,15 @@ class Main_Interface(Page):
         session.vars['buttonClickStates'] = {}
         session.vars['whosClickedWhat'] = {1: "", 2: "", 3: ""}
         session.vars['playersClicking'] = []
-        player.custom_round_num += 1
 
         
 
 class Round_Payoffs(Page):
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        if player.pointsEarned is None:
-            player.pointsEarned = 0 
-        print(f"Player {player.id_in_group} - Points Earned: {player.pointsEarned}")
+        if player.payoff is None:
+            player.payoff = 0 
+        print(f"Player {player.id_in_group} - Points Earned: {player.payoff}")
 
     @staticmethod
     def live_method(player: Player, data: dict):
@@ -389,14 +230,20 @@ class Questionnaire(Page):
 
 class CompulsoryOffer(Page):
     @staticmethod
-    def vars_for_template(self):
-        return{
-            'totalNodes':self.session.config['totalNodes'],  
-            'totalPoints':self.session.config['totalPoints'],
-            'initialCurrencyValue':self.session.config['initialCurrencyValue'],
-            'ratificationTime':self.session.config['ratificationTime'],
-            'timeLimit':self.session.config['timeLimit'],
+    def vars_for_template(player):
+        group = player.group.get_players() 
+        player.gender=player.participant.gender
+        players_data = {p.id_in_group: p.participant.gender for p in group}
+
+        return {
+            'player_id': player.id_in_group,  
+            'players_data': players_data, 
+            'totalNodes': player.session.config['totalNodes'],  
+            'totalMoney': player.session.config['totalMoney'],
+            'ratificationTime': player.session.config['ratificationTime'],
+            'timeLimit': player.session.config['timeLimit'],
         }
+
 
     def is_displayed(player):
         # only display this page if the treatment is enabled
@@ -466,7 +313,7 @@ class CompulsoryOffer(Page):
                     Session_Code=groupId.session.code,
                     Subject_ID=player.participant.code,
                     Group_Num=groupId.id,
-                    Round_Num=player.custom_round_num,
+                    Round_Num=player.round_number,
                     SubGroup_ID=player_id,
                     S1_Points=data['payoffs']['p1_points'], 
                     S2_Points=data['payoffs']['p2_points'], 
@@ -486,18 +333,7 @@ class CompulsoryOffer(Page):
                     p = groupId.get_player_by_id(player_id)
                     p_payoff = data['payoffs'].get(f'p{player_id}_points', 0) 
                     p.payoff = p_payoff
-                    p.currency = round(p_payoff * currency_decay, 2)
-                    p.ogCurrency = p_payoff * 3.00
 
-                # store round payoffs
-                round_num = player.round_number
-                round_payoffs = json.loads(player.round_payoffs)
-                round_payoffs[str(round_num)] = {
-                    'payoff': float(player.payoff),
-                    'ogCurrency': float(player.ogCurrency),
-                    'currency': float(player.currency)
-                }
-                player.round_payoffs = json.dumps(round_payoffs)
 
 
         #how many players have submitted a first offer?
@@ -612,137 +448,12 @@ class CompulsoryOffer(Page):
                 }
             }
 
-class Experiment_End(Page):
-    @staticmethod
-    def before_next_page(player: Player, timeout_happened):
-        player.custom_round_num = 1  # Reset at the final page
-
-    @staticmethod
-    def vars_for_template(player: Player):
-        # Load round payoffs and calculate points
-        all_round_currencies = json.loads(player.all_round_currencies)
-        exchange_rate = player.session.config['initialCurrencyValue']  # Exchange rate (e.g., 1 point = 3 USD)
-        all_round_points = {
-            round_num: round(currency / exchange_rate, 2)
-            for round_num, currency in all_round_currencies.items()
-        }
-
-        # Load MPL choices
-        all_mpl_choices = json.loads(player.all_mpl_choices)
-
-        # Select two random payment rounds and sort them
-        payment_rounds = sorted(rounds_payment)
-
-        total_payoff = 0
-        payment_details = []
-
-        # Calculate payoff details for the selected rounds
-        for round_num in payment_rounds:
-            round_str = str(round_num)
-            round_currency = all_round_currencies.get(round_str, 0)
-            round_points = all_round_points.get(round_str, 0)
-            mpl_choices = all_mpl_choices.get(round_str, [])
-
-            # Randomly decide between negotiation and MPL
-            use_negotiation = random.choice([True, False])
-            round_detail = {"round": round_num, "show_points": False}  # Default show_points to False
-            fixed_money = None  
 
 
-            if use_negotiation:
-                # Negotiation chosen
-                round_detail.update({
-                    "payment_type": "Negotiation",
-                    "points_earned": round_points,
-                    "money_earned": round_currency,
-                    "mpl_row": None,
-                    "mpl_choice": None,
-                    "show_points": True,  # Points are shown for negotiation
-                    "details": "Payoff was determined through negotiation",
-                })
-                total_payoff += round_currency
-            else:
-                # MPL chosen
-                if mpl_choices:
-                    selected_index = random.randint(0, len(mpl_choices) - 1)
-                    selected_value = mpl_choices[selected_index]
-                    if selected_value == -1:  # Negotiation selected via MPL
-                        round_detail.update({
-                            "payment_type": "Multi-Price List",
-                            "points_earned": round_points,
-                            "money_earned": round_currency,
-                            "mpl_row": selected_index,
-                            "show_points": True,  # Points are shown for negotiation
-                            "mpl_choice": "Negotiation",
-                            "details": f"The row chosen was {selected_index}. You chose \"Negotiation\" over a fixed payout of {fixed_money} for this row",
-                        })
-                        total_payoff += round_currency
-                    else:
-                        # Fixed amount selected
-                        fixed_money = int(selected_value)
-                        fixed_points = round(fixed_money / exchange_rate, 2)
-                        round_detail.update({
-                            "payment_type": "Multi-Price List",
-                            "points_earned": fixed_points,
-                            "money_earned": fixed_money,
-                            "show_points": False,  # Points are hidden for fixed money
-                            "mpl_row": selected_index,
-                            "mpl_choice": "Fixed Money",
-                            "details": f"The row chosen was {selected_index}. You chose a fixed payout of {fixed_money} USD over \"Negotiation\" for this row",
-                        })
-                        total_payoff += fixed_money
-                else:
-                    # No MPL choices available
-                    round_detail.update({
-                        "payment_type": "Multi-Price List",
-                        "points_earned": 0,
-                        "money_earned": 0,
-                        "mpl_row": None,
-                        "mpl_choice": None,
-                        "show_points": False,  # Points are hidden when no MPL choices
-                        "details": "No Multi-Price List choices were available for this round",
-                    })
-
-            payment_details.append(round_detail)
-
-        # Finalize total payment and output
-        return {
-            "payment_rounds": payment_rounds,  # Sorted rounds
-            "payment_details": payment_details,  # Detailed breakdown for frontend
-            "total_payment": round(total_payoff, 2),  # Total money earned
-        }
+page_sequence = [WaitingRoom, Main_Interface, Round_Payoffs]
 
 
-
-
-class MLP(Page):
-
-    @staticmethod
-    def vars_for_template(self):
-        return({'totalPoints':self.session.config['totalPoints'],
-                'currency':self.session.config['totalPoints']*self.session.config['initialCurrencyValue']})
-    
-
-    @staticmethod
-    def live_method(player,data):
-        if 'mpl_choices' in data:
-            #retrieve existing MPL choices
-            all_choices = json.loads(player.all_mpl_choices)
-
-            print("Round:",player.custom_round_num,"Player:",player.id_in_group)
-            #update choices for current round
-            current_round=player.custom_round_num
-            all_choices[current_round] = data['mpl_choices']
-
-            #save back to model
-            player.all_mpl_choices = json.dumps(all_choices)
-
-#MLP,WaitingRoom,CompulsoryOffer, 
-#Questionnaire, 
-page_sequence = [MLP,WaitingRoom,CompulsoryOffer, Main_Interface, Round_Payoffs] * totalRounds + [Experiment_End]
-
-
-
+#Gender Selection, Waiting Room,Multi price list and then the repeated rounds part should be Main_Interface, Round Payoffs, and then their should be experiment_end (not repeated)
 print(f"Total pages: {len(page_sequence)}")
 for i, page in enumerate(page_sequence):
     print(f"Page {i + 1}: {page.__name__}")

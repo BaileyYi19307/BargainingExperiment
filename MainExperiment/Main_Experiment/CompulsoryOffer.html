@@ -15,7 +15,7 @@
       Participant A
       <div class="icon-wrapper">
         <img
-          src="{{ static 'images/male-icon.png' }}"
+          src=""
           class="icon"
           width="25"
           height="35"
@@ -28,7 +28,7 @@
       Participant B
       <div class="icon-wrapper">
         <img
-          src="{{ static 'images/male-icon.png' }}"
+          src=""
           class="icon"
           width="25"
           height="35"
@@ -41,7 +41,7 @@
       <span class="hover-value" id="hover-p1-value"></span>
       <div class="icon-wrapper">
         <img
-          src="{{ static 'images/male-icon.png' }}"
+          src=""
           class="icon"
           width="25"
           height="35"
@@ -63,10 +63,9 @@
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   var config = {
-    totalNodes: {{totalNodes}},               // Number of nodes in the triangle
-    totalPoints: {{totalPoints}},             // Total points to distribute
-    initialCurrencyValue: {{initialCurrencyValue}}, // Starting currency value
-    ratificationTime: {{ratificationTime}}          // Time for ratification/agreement countdown
+    totalNodes: {{totalNodes}},               
+    totalMoney: {{totalMoney}},             
+    ratificationTime: {{ratificationTime}}          
   };
 
   // track which buttons have been clicked and by who
@@ -84,10 +83,38 @@
 
   // when the document is fully loaded, initialize the game setup
   document.addEventListener('DOMContentLoaded', function() {
-    generateTriangle(config.totalNodes, config.totalPoints);
-    // positionCornerLabels();
+    setIcons()
+    generateTriangle(config.totalNodes, config.totalMoney);
     liveSend({ 'experiment_started': Date.now() });
   });
+
+  
+  function setIcons(){
+    let player_id= {{player_id}}
+    const playersData = {{ players_data }};
+    // if it's player 1
+    let mappings = {"Male":"{{ static 'images/maleicon.png' }}","Female": "{{ static 'images/femaleicon.png' }}"};
+    let participant2Icon = document.querySelector("#participant2Label .icon");
+    let participant3Icon = document.querySelector("#participant3Label .icon");
+    let youIcon = document.querySelector("#youLabel .icon");
+
+    if(player_id==1){
+      youIcon.src = mappings[playersData[1]]
+      participant2Icon.src = mappings[playersData[2]]
+      participant3Icon.src = mappings[playersData[3]]
+    }
+    else if (player_id==2){
+      youIcon.src = mappings[playersData[2]]
+      participant2Icon.src = mappings[playersData[3]]
+      participant3Icon.src = mappings[playersData[1]]
+    }
+    else{
+      youIcon.src = mappings[playersData[3]]
+      participant2Icon.src = mappings[playersData[1]]
+      participant3Icon.src = mappings[playersData[2]]
+    }
+  }
+
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //CODE TO INITIALIZE THE TRIANGLE
@@ -95,13 +122,13 @@
 
   // function to generate triangle of n nodes
   // points are divided equally
-  function generateTriangle(numOfCircles, totalPoints) {
+  function generateTriangle(numOfCircles, totalMoney) {
     const triangleContainer = document.getElementById('triangleContainer');
     const numRows = Math.floor(Math.sqrt(2 * numOfCircles + 0.25) - 0.5);
 
     //scaling factor for converting unscaled points to scaled points
     //i.e (0,3,0) *scaling factor of 5=> (0,15,0)
-    const scalingFactor = totalPoints / (numRows - 1);
+    const scalingFactor = totalMoney / (numRows - 1);
 
     //generate each row of buttons for inverted triangle with "numRows" number of rows
     for (let rowNum = numRows; rowNum >= 1; rowNum--) {
@@ -667,6 +694,14 @@
     background-color: #d3d3d3;
     border-radius: 50%;
     margin: 5px auto;
+    overflow:hidden;
+  }
+
+  .icon {
+    object-fit: contain;
+    display: block;
+    width: 50px;
+    height: 50px;
   }
 
   .parent-container {

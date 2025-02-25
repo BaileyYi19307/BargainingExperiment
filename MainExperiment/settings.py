@@ -1,20 +1,49 @@
 from os import environ
 
-
 SESSION_CONFIGS = [
+    # dict(
+    #     name="Tutorial",
+    #     display_name="Tutorial Walkthrough",
+    #     app_sequence=['Tutorial'],
+    #     num_demo_participants=3,
+    #     totalNodes=66,  
+    #     totalMoney=54,  
+    #     timeLimit=1,
+    #     initialCurrencyValue=3.00,  
+    #     ratificationTime=2,
+    #     num_rounds=3,  # Total rounds (1 for each phase + repeated rounds)
+  
+    # ),
     dict(
         name="Main_Experiment",
         display_name="Triangle Experiment",
-        app_sequence=['Main_Experiment'],
+        app_sequence=['Tutorial','PreExperiment','Main_Experiment','ExperimentEnd'], 
         num_demo_participants=3,
-        compulsory_offer_treatment=True,  # enable compulsory offer
-        totalNodes=66,  #number of nodes in the triangle
-        totalPoints=18,  #total points to distribute 
-        initialCurrencyValue=3.00, #starting currency value
-        ratificationTime=10, #time for ratification/agreement countdown
-        timeLimit=3, #time limit for the experiment round
-    )
+        compulsory_offer_treatment=True,  
+        totalNodes=66,  
+        totalMoney=54,  
+        initialCurrencyValue=3.00,  
+        ratificationTime=10,  
+        timeLimit=3,  
+        num_rounds=3,  # Total rounds (1 for each phase + repeated rounds)
+    ),
 ]
+
+
+# SESSION_CONFIGS = [
+#     dict(
+#         name="Main_Experiment",
+#         display_name="Triangle Experiment",
+#         app_sequence=['Main_Experiment'],
+#         num_demo_participants=3,
+#         compulsory_offer_treatment=True,  # enable compulsory offer
+#         totalNodes=66,  #number of nodes in the triangle
+#         totalPoints=18,  #total points to distribute 
+#         initialCurrencyValue=3.00, #starting currency value
+#         ratificationTime=10, #time for ratification/agreement countdown
+#         timeLimit=3, #time limit for the experiment round
+#     )
+# ]
 
 
 
@@ -27,8 +56,14 @@ SESSION_CONFIG_DEFAULTS = dict(
     real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
 )
 
-PARTICIPANT_FIELDS = ['expiry']
-SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whosClickedWhat','buttonClickStates','experiment_started', 'submittedFirstOffer']
+
+PARTICIPANT_FIELDS = ['expiry','gender','mpl_choices','round_payoffs']
+# SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whosClickedWhat','buttonClickStates','experiment_started', 'submittedFirstOffer']
+SESSION_FIELDS = [
+    'who_in_agreement', 'numAgree', 'beginningTime', 'previd', 'taskList', 
+    'howManyCompleted', 'finishedAlready', 'playersClicking', 'whosClickedWhat', 
+    'buttonClickStates', 'experiment_started', 'submittedFirstOffer','selected_rounds'
+]
 
 # ISO-639 code
 # for example: de, fr, ja, ko, zh-hans
@@ -36,7 +71,7 @@ LANGUAGE_CODE = 'en'
 
 # e.g. EUR, GBP, CNY, JPY
 REAL_WORLD_CURRENCY_CODE = 'USD'
-USE_POINTS = True
+USE_POINTS = False
 
 
 ROOMS = [
@@ -54,4 +89,6 @@ Here are some oTree games.
 
 SECRET_KEY = '2027701578159'
 
-INSTALLED_APPS = ['otree']
+INSTALLED_APPS = ['otree', 'Main_Experiment', 'Tutorial']
+
+

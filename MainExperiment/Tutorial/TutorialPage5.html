@@ -1,0 +1,53 @@
+
+{% block content %}
+
+<p>You have finished the tutorial.</p>
+<p>You will now interact 3 times with <strong>real participants</strong>.</p>
+
+<p>The participants with whom you will interact will be randomly determined at the beginning of each round.</p>
+
+<p>The other participants in your group will always be referred to on your screen as "Participant A" and "Participant B".</p>
+
+<p>At the end of the experiment, the computer will randomly select <strong>two</strong> rounds from three total rounds. You will be paid based on your earnings in those rounds.</p>
+<p>You may now ask questions about the instructions on this page and the way the program works.</p>
+
+<p>If you have a question, please raise your hand and ask it <strong>quietly</strong> when an experimenter comes.</p>
+
+<p>If you have no questions, please click "Continue" and wait for the <strong>real rounds</strong> to begin.</p>
+
+<br><br>
+<button name="finish" type="submit" id="continue-button">Continue</button>
+
+<style>
+
+button[name="finish"] {
+  background-color: #4caf50;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button[name="finish"] h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: normal;
+}
+
+button[name="finish"]:hover {
+  background-color: #43a047;
+}
+
+</style>
+
+<script>
+    let btn=document.querySelector("#continue-button");
+    btn.addEventListener("click",function(event){
+        document.querySelector('form').submit();
+    })
+</script>
+
+{% endblock %}

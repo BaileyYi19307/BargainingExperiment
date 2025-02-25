@@ -1,0 +1,176 @@
+{% block title %}
+{% endblock %}
+
+{% block content %}
+<div class="title"><h1>TUTORIAL STAGE 2</h1></div>
+
+<div class="instructions-container">
+  <div class="instructions">
+    <div class="text">
+      <ul>
+        <li>During the real interactions, any of the three participants (including you) may click on any circle at any time.</li>
+        <li>When you click on a circle, the other two participants in your group will see this circle marked on their screen.</li>
+        <li>
+            When another participant in your group clicks on a circle on their screen, it will be marked on your screen in the color corresponding to that participant: <span style="color: orange;">orange</span> for <strong><span style="color: orange;">Participant A</span></strong> <span style="color: blue;">blue</span> for <strong><span style="color: blue;">Participant B</span></strong>.
+          </li>
+                  <li>Clicking on an unmarked circle is like suggesting that division.</li>
+        <li>Clicking on a circle marked by another participant is like provisionally accepting the division they have suggested.
+          <ul>
+            <strong>
+              <li>The offer will only be really accepted and determine the number of points earned in that round if neither you nor the other participant clicks elsewhere in the following {{ratificationTime}} seconds.</li>
+              <li>The offer will be accepted immediately.</li>
+            </strong>
+          </ul>
+        </li>
+        <li>When another participant clicks on a circle you have marked, they have provisionally accepted the division you have suggested. Again, your offer will only be really accepted and determine the number of points earned in that round if neither you nor the other participant clicks elsewhere in the following {{ratificationTime}} seconds.</li>
+        <li>When there is a provisional agreement in place, <strong> <span style="color: red;">a red circle </span></strong> will appear in the appropriate circle.</li>
+        <li>When there is a provisional agreement in place, a clock will start counting down <strong> “Time until agreement” from {{ratificationTime}} seconds </strong> to let you know when it will be really accepted if neither participant clicks elsewhere. You can see this shown in red on the picture at the end
+of these instructions.</li>
+        <li>For the division to be implemented <strong> at least two of the three group members must arrive at an agreement. </strong></li>
+      </ul>
+  
+      <h2>THE VALUE OF POINTS, TIME LIMITS and ROUND EARNINGS</h2>
+      <ul>
+        <li>At the start of each round, you have {{totalMoney}} USD to divide within your group.</li>
+        <li><strong>The round will end, when an agreement is reached or when the timer reaches 0.</strong> If there is no agreement after the timer has reached 0, the round will end, and no one will receive any points.</li>
+        <li><strong>If the agreement is finalized, your earnings for a particular round will be determined by the money allocated to you in that round:</strong></li>
+      </ul>
+  
+      <h2>DO NOT CLICK “Move to stage 2” JUST YET!</h2>
+      <ul>
+        <li>When you click “Move to stage 2” two things will happen:
+          <ul>
+            <li>Two circles, one blue and one orange, will appear on random circles in the triangle. These are what it looks like when the participants you are interacting with click on their triangle, but the locations of these circles have been chosen by the computer at random. You will not be interacting with real participants for now.</li>
+            <li>The timer will start. Don’t worry! The money received in this tutorial will not affect how much money you earn in this experiment. Also, you can repeat this part of the tutorial as many times as you like.</li>
+          </ul>
+        </li>
+        <li>There will be only two differences between Stage 2 of the tutorial and the real interactions:
+          <ul>
+            <li>In the tutorial rounds the money you receive will not affect how much money you earn.</li>
+            <li>In the real interactions the blue and orange circles may move as the participants you are interacting with click on different circles on their triangles.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  
+    <br>
+  
+    <style>
+      .inactive{
+          background-color: lightgrey;
+          opacity: 0.6;
+      }
+  
+
+      
+      .triangle-container {
+          display: inline-block;
+          width: 100%;
+          margin: 0 auto;
+      }
+      
+      .parentcontainer {
+          display: flex;
+          justify-content: space-evenly;
+          width: 100%;
+      }
+      
+      .inner-container {
+          padding: 20px;
+          border: 1px solid white;
+      }
+      
+      .triangle-row {
+          display: flex;
+          justify-content: center;
+      }
+      
+      .button {
+          width: 30px;
+          height: 30px;
+          margin: 2px;
+          border-radius: 15px;
+          border: 1px solid black;
+      }
+      
+      .button.activeYou {
+          border: none;
+          box-shadow: 0 0 0 2px green; 
+      }
+  
+      .button.activeA {
+          border: none;
+          box-shadow: 0 0 0 2px red; 
+      }
+      .button.activeB{
+          border: none;
+          box-shadow: 0 0 0 2px blue; 
+      }
+      .instructions-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.instructions {
+  background-color: #f9f9f9;
+  padding: 25px 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.instructions h2 {
+  margin-top: 25px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 5px;
+}
+
+.instructions h4 {
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.instructions ul {
+  padding-left: 20px;
+  margin-bottom: 15px;
+}
+
+button[name="begin"] {
+  background-color: #4caf50;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button[name="begin"] h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: normal;
+}
+
+button[name="begin"]:hover {
+  background-color: #43a047;
+}
+
+    </style>
+  
+    <h4>CLICK ON “Move to stage 2” and complete the exercises</h4>
+    <br>
+    <button name="begin"><h1>Move to stage 2</h1></button>
+  </div>
+</div>
+{% endblock %}

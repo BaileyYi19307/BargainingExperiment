@@ -1,20 +1,71 @@
 {% block title %}
-Instructions
+Tutorial Instructions
 {% endblock %}
 
 {% block content %}
 
-<div class="instructions">
+<div class="instructions-container">
+  <div class="instructions">
     <p>In this part of the experiment, participants will interact in groups of three. The interaction will be repeated twelve times. In what follows, we will call each repetition of the interaction a "round".</p>
-    <p>During each round, the three members of a group will have the opportunity to distribute <strong> {{totalPoints}} POINTS</strong> amongst themselves.</p>
+    <p>During each round, the three members of a group will have the opportunity to distribute <strong>$ {{totalMoney}} USD</strong> amongst themselves.</p>
     <p>The points you receive will determine how much money you earn at the end of the experiment (exactly how will be explained later, but the more points you receive, the more money you can expect to earn).</p>
     <p>In order to help you understand exactly how the interactions work, we will now demonstrate the functioning of the program on your screen.</p>
     <p>There will be a short tutorial. In the tutorial, you will be shown the screen that will be used during the real rounds. How to understand this screen and use it to interact with the other participants in your group is explained to you in the printed instructions you have been given.</p>
     <p>During this tutorial <strong>no money will be awarded</strong>. The purpose of this tutorial is only to help you understand how the program works. You will be informed before the real interactions begin. Please follow the printed instructions carefully. It is important to understand how the program works!</p>
     <p><strong>PLEASE CLICK "Begin Tutorial" IF YOU ARE READY TO BEGIN THE TUTORIAL. Follow the printed instructions to complete the tutorial.</strong></p>
+  </div>
+
+  {{ formfields }}
+  <button name="begin"><h1>Begin Tutorial</h1></button>
 </div>
 
-{{ formfields }}
-<button name="begin"><h1>Begin Tutorial</h1></button>
+<style>
+    .instructions-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
+.instructions {
+  background-color: #f9f9f9;
+  padding: 25px 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.instructions p {
+  margin-bottom: 15px;
+}
+
+button[name="begin"] {
+  background-color: #4caf50;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button[name="begin"] h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: normal;
+}
+
+button[name="begin"]:hover {
+  background-color: #43a047;
+}
+
+</style>
 {% endblock %}

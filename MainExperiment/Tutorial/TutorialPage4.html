@@ -1,73 +1,109 @@
-{{ block title }} {{ endblock }} {{ block content }}
-<div class="parent-container">
-  <div class="timers-container">
-    <div id="countdown-timer">
-      Time Remaining: <span id="time-remaining">0{{timeLimit}}:00</span>
-    </div>
+{{ block title }}
+{{ endblock }}
+{{ block content }}
 
-    <div id="agreement-timer" style="visibility: hidden;">
-      Time to Agreement: <span id="agreement-time">{{ratificationTime}}</span>
-    </div>
-  </div>
+<div class="title"><h1>TUTORIAL STAGE 3</h1></div>
+<br>
 
-  <div class="triangle-wrapper">
-    <div class="corner-label top-left" id="participant2Label">
-      Participant A
-      <div class="icon-wrapper">
-        <img
-          src=""
-          class="icon"
-          width="40"
-          height="40"
-        />
+<ul>
+    <li><strong>Exercises:</strong>
+      <li>Watch the top line of the screen and see how the timer decreases.</li>
+      </li>
+        <ul>
+            <li id="task1"><input type="checkbox" class="exercise-checkbox" id="checkbox1">Click the blue circle and see how the “Time until agreement” starts counting down until zero, when the round will “end” and the number of points you receive is determined.</li>
+            <li id="task2"><input type="checkbox" class="exercise-checkbox" id="checkbox2">Then click “Play another tutorial round” and repeat with the orange circle and click “Play another tutorial round” again.</li>
+            <li id="task3"><input type="checkbox" class="exercise-checkbox" id="checkbox3">Now try clicking on the blue circle then clicking on an empty circle or outside the triangle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then disappears when you click elsewhere.</li>
+            <li id="task4"><input type="checkbox" class="exercise-checkbox" id="checkbox4">Now try clicking on the blue circle then clicking on the orange circle before the 10 seconds are up. See how the “Time until agreement” starts counting down and then starts again at 10 seconds when you click on the second circle.</li>
+            <li>You can now experiment with the tutorial screen as much as you like.</li>
+        </ul>
+    </li>
+</ul>
+
+
+
+<div class="box">
+  
+
+      <div id="results-box" style="display: none;">
+        <div class="results-container">
+            <h1 class="results-title">Your Results</h1>
+            <div class="payoff-box">
+                <p class="payoff-label">You get:</p>
+                <p class="payoff-amount"><span id="result-payoff"></span> USD</p>
+            </div>
+            <button type="button" id="repeat-tutorial-btn" class="next-button">Play Another Tutorial Round</button>
+        </div>
       </div>
-      <span class="hover-value" id="hover-p2-value"></span>
-    </div>
 
-    <div class="corner-label top-right" id="participant3Label">
-      Participant B
-      <div class="icon-wrapper">
-        <img
-          src=""
-          class="icon"
-          width="40"
-          height="40"
-        />
-      </div>
-      <span class="hover-value" id="hover-p3-value"></span>
-    </div>
 
-    <div class="corner-label bottom" id="youLabel">
-      <span class="hover-value" id="hover-p1-value"></span>
-      <div class="icon-wrapper">
-        <img
-          src=""
-          class="icon"
-          width="40"
-          height="40"
-        />
-      </div>
-      You
-    </div>
 
-    <div id="triangleContainer">
-    </div>
-  </div>
+        <div class="parent-container">
+          <div class="timers-container">
+            <div id="countdown-timer">
+              Time Remaining: <span id="time-remaining">0{{timeLimit}}:00</span>
+            </div>
+        
+            <div id="agreement-timer" style="visibility: hidden;">
+              Time to Agreement: <span id="agreement-time">{{ratificationTime}}</span>
+            </div>
+          </div>
+        
+          <div class="triangle-wrapper">
+            <div class="corner-label top-left" id="participant2Label">
+              Participant A
+              <div class="icon-wrapper">
+                <img
+                  src="{{ static 'images/maleicon.png' }}"
+                  class="icon"
+                  width="40"
+                  height="40"
+                />
+              </div>
+              <span class="hover-value" id="hover-p2-value"></span>
+            </div>
+        
+            <div class="corner-label top-right" id="participant3Label">
+              Participant B
+              <div class="icon-wrapper">
+                <img
+                  src="{{ static 'images/maleicon.png' }}"
+                  class="icon"
+                  width="40"
+                  height="40"
+                />
+              </div>
+              <span class="hover-value" id="hover-p3-value"></span>
+            </div>
+        
+            <div class="corner-label bottom" id="youLabel">
+              <span class="hover-value" id="hover-p1-value"></span>
+              <div class="icon-wrapper">
+                <img
+                  src="{{ static 'images/maleicon.png' }}"
+                  class="icon"
+                  width="40"
+                  height="40"
+                />
+              </div>
+              You
+            </div>
+        
+            <div id="triangleContainer">
+            </div>
+          </div>
+        </div>
+  
+
+<p><strong>When you have understood how the interactions work, click on “Finish tutorial” button. When all participants have finished the tutorial, the real interactions will begin.</strong></p>
+<button name="finish" type="submit" id="finish-tutorial-btn" disabled><h1>Finish Tutorial</h1></button>
+
 </div>
-
-
 <script>
-  //as soon as DOM content is loaded
-  document.addEventListener('DOMContentLoaded', () => {
-      // Request the backend to send compulsory offer data
-      liveSend({ send_compulsory_data: true });
-  });
+
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // CONFIGURATION
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
   // configuration settings for game
   var config = {
@@ -76,11 +112,15 @@
     ratificationTime: {{ratificationTime}},         // Time for ratification/agreement countdown
   };
 
+  let lastClickedButton = [];
+
   // track which buttons have been clicked and by who
   window.buttonClickStates = {};
 
   // store the player's ID
   window.playerId = {{ player.id_in_group }};
+
+  let allButtonsList = []
 
   // track the border color states for different actions
   var borderColors = {
@@ -89,41 +129,78 @@
     green: false
   };
 
+  function getMeTaskList(){
+    liveSend({'getMeTaskList':'please'});
+  }
+
+
   // when the document is fully loaded, initialize the game setup
   document.addEventListener('DOMContentLoaded', function() {
-    setIcons()
-    console.time("generateTriangle");
     startTimer();
     generateTriangle(config.totalNodes, config.totalMoney);
-    console.timeEnd("generateTriangle");
+    makeBotsChoose();
+    setupExerciseChecklist();
+    getMeTaskList();
   });
 
 
-  function setIcons(){
-    let player_id= {{player_id}}
-    const playersData = {{ players_data }};
-    // if it's player 1
-    let mappings = {"Male":"{{ static 'images/maleicon.png' }}","Female": "{{ static 'images/femaleicon.png' }}"};
-    let participant2Icon = document.querySelector("#participant2Label .icon");
-    let participant3Icon = document.querySelector("#participant3Label .icon");
-    let youIcon = document.querySelector("#youLabel .icon");
-
-    if(player_id==1){
-      youIcon.src = mappings[playersData[1]]
-      participant2Icon.src = mappings[playersData[2]]
-      participant3Icon.src = mappings[playersData[3]]
-    }
-    else if (player_id==2){
-      youIcon.src = mappings[playersData[2]]
-      participant2Icon.src = mappings[playersData[3]]
-      participant3Icon.src = mappings[playersData[1]]
-    }
-    else{
-      youIcon.src = mappings[playersData[3]]
-      participant2Icon.src = mappings[playersData[1]]
-      participant3Icon.src = mappings[playersData[2]]
-    }
+  function makeBotsChoose(){
+    liveSend({"botsChoose":true,"allButtonsList":allButtonsList})
   }
+  function setupExerciseChecklist() {
+    const checkboxes = document.querySelectorAll('.exercise-checkbox');
+    const finishButton = document.getElementById('finish-tutorial-btn');
+
+    // Ensure checkboxes are unchecked at the start
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false; // Reset state
+    });
+
+    // Function to check if all checkboxes are checked
+    function updateButtonState() {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        console.log("This is allChecked:", allChecked);
+        finishButton.disabled = !allChecked;
+    }
+
+    // Attach event listener to each checkbox
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateButtonState);
+    });
+
+    // Ensure the button starts disabled
+    updateButtonState();
+}
+
+
+
+
+  function checkCompleted(taskList){
+    for (let key in taskList){
+        check(key);
+    }
+}
+
+function check(x) {
+    var element = document.getElementById('checkbox' + x);
+    if (element) {
+        element.checked = true;
+    } else {
+        console.error("Element with id 'task" + x + "' not found.");
+    }
+
+    var taskElement = document.getElementById('task' + x);
+    if (taskElement) {
+        taskElement.style.textDecoration = 'line-through';
+    } else {
+        console.error("Element with id 'task" + x + "' not found.");
+    }
+}
+
+
+  document.getElementById("repeat-tutorial-btn").addEventListener("click", function() {
+    location.reload(); 
+  });
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //CODE TO INITIALIZE THE TRIANGLE
@@ -190,6 +267,7 @@
     const buttonId = `btn${pointsForPlayer1}_${pointsForPlayer2}_${pointsForPlayer3}`;
     button.id = buttonId;
     button.dataset.coords = `(${pointsForPlayer1},${pointsForPlayer2},${pointsForPlayer3})`; // Store coordinates in data attribute
+    allButtonsList.push(buttonId);
 
     //for each button, we want to know who they've been clicked by
     buttonClickStates[buttonId] = { clickedByUser1: false, clickedByUser2: false, clickedByUser3: false };
@@ -199,7 +277,6 @@
 
     return button;
   }
-
 
   //function to attach event listeners to each newly created button
   function addButtonEventListeners(button) {
@@ -215,7 +292,7 @@
       const hoverValues = event.target.dataset.coords.split(',').map(coord => coord.trim().replace(/[()]/g, '')).map(Number);
       const [p1, p2, p3] = hoverValues;
 
-      // map hover values based on the player's perspective (player 1, 2, or  3)
+      // map hover values based on the player's perspective (player 1, 2, or  3)
       const mappedValues = mapValuesBasedOnPerspective(p1, p2, p3, playerId);
 
       // mapping the hover positions based on the player's perspective
@@ -278,27 +355,38 @@
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   
-  function startTimer() {
+  let timerActive = true; // Control flag for the timer
+
+function startTimer() {
     const timerDisplay = document.getElementById('time-remaining');
     if (!timerDisplay) return console.error("Timer element not found!");
 
-    const endTime = Date.now() + ({{ timeLimit }} * 60 * 1000); 
+    const endTime = Date.now() + ({{ timeLimit }} * 60 * 1000);
 
     function updateTimer() {
-        const remainingTime = Math.max(0, endTime - Date.now()); 
+        if (!timerActive) return; // Stop updating if timerActive is set to false
+
+        const remainingTime = Math.max(0, endTime - Date.now());
         const minutes = Math.floor(remainingTime / 60000);
         const seconds = Math.floor((remainingTime % 60000) / 1000);
 
         timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
         if (remainingTime > 0) {
-            requestAnimationFrame(updateTimer); 
+            requestAnimationFrame(updateTimer);
         } else {
-            document.querySelector('form').submit();
+            stopTimer();
+            displayResults();
+            document.getElementById('result-payoff').textContent = '$0 USD';        
         }
     }
 
     updateTimer(); // Start the timer loop
+}
+
+// Function to stop the timer
+function stopTimer() {
+    timerActive = false; // This prevents further updates
 }
 
 
@@ -316,19 +404,98 @@
       // submit the form when time runs out
       if (seconds === 0) {
         clearInterval(window.agreementTimer);
-        document.querySelector('form').submit();
+        stopTimer();
+        displayResults();
       }
     }, 1000);
   }
 
-  function stopAgreementTimer() {
-    clearInterval(window.agreementTimer); 
-    window.agreementTimer = null;
-    
+  function displayResults() {
+        if (lastClickedButtonId == window.bluebot){
+            check(1);
+            liveSend({buttonClicked:true,whichTask:1});
+        }
+        if (lastClickedButtonId == window.orangebot){
+            check(2);
+            liveSend({buttonClicked:true,whichTask:2});
+        }
+
+        document.querySelector('.parent-container').style.display='none';
+
+        document.getElementById('triangleContainer').style.display = 'none';
+        document.getElementById('participant2Label').style.display = 'none';
+        document.getElementById('participant3Label').style.display = 'none';
+        document.getElementById('youLabel').style.display = 'none';
+        document.getElementById('agreement-timer').style.display = 'none';
+
+        document.getElementById('results-box').style.display = 'block';
+        document.getElementById('countdown-timer').style.display='none';
+
+
+        if (!lastClickedButtonId) {
+        console.error("No button clicked, unable to determine payoff.");
+            return;
+        }
+
+        // Extract payoffs from button ID
+        const values = lastClickedButtonId.replace('btn', '').split('_').map(Number);
+        if (values.length !== 3) {
+            console.error("Invalid button ID format:", lastClickedButtonId);
+            return;
+        }
+
+        const [payoff1, payoff2, payoff3] = values;
+
+        if (playerId==1){
+          document.getElementById('result-payoff').textContent = payoff1;        
+        }
+        else if (playerId==2){
+          document.getElementById('result-payoff').textContent = payoff2;        
+
+        }
+        else if (playerId==3){
+          document.getElementById('result-payoff').textContent = payoff3;        
+
+        }
+    }
+
+
+
+
+
+    function stopAgreementTimer() {
     const agreementDisplay = document.getElementById('agreement-timer');
-    agreementDisplay.style.visibility = 'hidden'; 
-    agreementDisplay.textContent = 'Time to Agreement:'; 
-  }
+    agreementDisplay.style.visibility = 'hidden';
+    
+    clearInterval(window.agreementTimer);
+    console.log(lastClickedButton);
+    
+    if (lastClickedButton.length != 0) {
+        console.log("HELLO I made it here");
+        console.log("bluebot -", window.bluebot);
+        console.log("lastClickedButton array: ",lastClickedButton)
+        if (lastClickedButton[lastClickedButton.length-2] === window.bluebot) {
+            console.log("Previous button was blue. Agreement timer stopped.");
+            if (taskList && taskList['1'] && taskList['2']){
+            check(3);
+            liveSend({buttonClicked:true, whichTask:3});
+            if (lastClickedButton[lastClickedButton.length-1] === window.orangebot){
+              
+                check(4);
+                liveSend({buttonClicked:true, whichTask:4});
+            }
+          }
+        } else if (lastClickedButton[0] === window.orangebot) {
+            console.log("Previous button was orange. Agreement timer stopped.");
+        }
+        else{
+            console.log("Neither blue nor orange was last button");
+        }
+    }
+    window.agreementTimer = null;
+    document.getElementById('agreement-timer').textContent = 'Time to Agreement:';
+}
+
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -339,121 +506,163 @@
 
 
   //handle programatically triggered button clicks for showing compulsory offers
-  function handleSimulatedClick(click) {
-    const button = document.getElementById(click.button_id);
+  function handleSimulatedClick(player_id,buttonId) {
+    const button = document.getElementById(buttonId);
     if (button) {
-      console.log(`Simulating click for button ${click.button_id} by Player ${click.clicked_by}`);
-      const btnState = buttonClickStates[click.button_id] || {};
-      btnState[`clickedByUser${click.clicked_by}`] = true;
+      console.log(`Simulating click for button ${buttonId} by Player ${player_id}`);
+      const btnState = buttonClickStates[buttonId] || {};
+      btnState[`clickedByUser${player_id}`] = true;
+      updatePlayerClickState(btnState,player_id);
       updateButtonAppearance(button, btnState);
-      monitorClickAgreement(click.button_id);
+      monitorClickAgreement(buttonId);
     }
   }
 
   //handle user-initiated button clicks
   function handleRealClick(data) {
-    const button = document.getElementById(data.button_id);
-    const btnState = buttonClickStates[data.button_id];
+    const button = document.getElementById(data);
+    const btnState = buttonClickStates[data];
+    console.log("I'm in handle realclick and this is the btn state:", btnState, "and here is the data: ",data);
 
-    updatePlayerClickState(btnState, data.player_id);
+    console.log('Deselected button: ',deselectedButtonId)
+    console.log(deselectedButtonId==window.bluebot)
 
-    resetOtherButtonState(data.button_id, data.player_id);
+
+    updatePlayerClickState(btnState,playerId);
+
+    resetOtherButtonState(data, playerId);
     updateButtonAppearance(button, btnState);
-    monitorClickAgreement(button.id); //check if multiple players agree on this button
-    lastClickedButtonId = button.id;
+    monitorClickAgreement(data); //check if multiple players agree on this button
+    lastClickedButtonId = data;
+    lastClickedButton.push(data);
 
-    updatePayoffs(data.button_id);
+    updatePayoffs(data);
   }
 
+  window.orangebot;
+  window.bluebot;
 
+  let taskList;
   //process incoming data from server
   function liveRecv(data) {
-    if (data.simulated_clicks) {
-      console.log("Handling simulated clicks");
-      data.simulated_clicks.forEach(handleSimulatedClick);
+    if ('allTasksCompleted' in data){
+            // all tasks have been completed, toggle the finish button on
+            document.getElementById('finish-tutorial-btn').disabled = false;
     }
-    if (data.button_id && data.player_id) {
+
+    console.log("This is the data here in liveRecv",data);
+    if ('taskList' in data){
+      console.log("Here! at tasklist in liveRecv");
+      console.log(data['taskList']);
+      taskList=data['taskList']
+      checkCompleted(data['taskList']);
+      if (data['alreadyFinished']== true){
+        checkCompleted(data['tasksDone'])
+        document.getElementById('finish-tutorial-btn').disabled = false;
+      }
+    }
+    console.log(Object.keys(data)[0]==="simulated_clicks")
+    
+    if (Object.keys(data)[0]==="simulated_clicks") {
+      //who is orange bot and who is bluebot
+      if (playerId == 1){
+        window.orangebot=Object.values(data["simulated_clicks"])[0]
+        window.bluebot=Object.values(data["simulated_clicks"])[1]
+      }
+      else if (playerId==2){
+        window.orangebot=Object.values(data["simulated_clicks"])[1]
+        window.bluebot=Object.values(data["simulated_clicks"])[0]
+      }
+      else{
+        window.orangebot=Object.values(data["simulated_clicks"])[0]
+        window.bluebot=Object.values(data["simulated_clicks"])[1]
+      }
+
+      console.log("Handling bot clicks");
+
+      for (const [bot, botChoice] of Object.entries(data["simulated_clicks"])) {
+        console.log("THe bot is",bot);
+        handleSimulatedClick(bot, botChoice);
+      }
+    } 
+    if ('user_clicked' in data){
       console.log("Handling user click");
-      handleRealClick(data);
+      handleRealClick(data["user_clicked"]);
     }
   }
 
 
-  //handle button clicks
   function handleButtonClick(buttonId) {
-    // if the clicked button is not the previously deselected one, clear the deselection
     if (buttonId !== deselectedButtonId) {
-      deselectedButtonId = null;
+        deselectedButtonId = null;
     }
 
-    // send information about the button click to the server
     liveSend({
-        button_clicked: true, //button was clicked
-        button_id:buttonId,   //id of the clicked button
-        participants:playerId //id of player who clicked the button
+        button_clicked: true,
+        button_id: buttonId,
+        participants: playerId
     });
 
-    lastClickedButtonId = buttonId
-  }
+    lastClickedButtonId = buttonId;
+    lastClickedButton.push(buttonId);
+    updatePayoffs(buttonId);
+}
 
-  document.addEventListener('click', function(event) {
-  const allButtons = document.querySelectorAll('.button');
-  const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
 
-  // handle clicks outside of the buttons
-  if (!clickedOnButton && lastClickedButtonId) {
-    if (deselectedButtonId !== lastClickedButtonId) {
-        console.log('Deselecting button:', lastClickedButtonId);
 
-        // notify the server
-        liveSend({
-            button_clicked: false,
-            button_id: lastClickedButtonId,
-            participants: playerId
-        });
 
-        // update deselection state
-        deselectedButtonId = lastClickedButtonId;
-        lastClickedButtonId = null;
+
+document.addEventListener('click', function(event) {
+    const allButtons = document.querySelectorAll('.button');
+    const clickedOnButton = Array.from(allButtons).some(button => button === event.target);
+
+    if (!clickedOnButton && lastClickedButtonId) {
+        if (deselectedButtonId !== lastClickedButtonId) {
+            console.log('Deselecting button:', lastClickedButtonId);
+
+            liveSend({
+                button_clicked: false,
+                button_id: lastClickedButtonId,
+                participants: playerId
+            });
+
+            deselectedButtonId = lastClickedButtonId;
+            lastClickedButtonId = null;
+        }
     }
-  }
-  });
+});
 
 
   let agreementButtonID = null;  // tracks the button currently in agreement
   let prevButtonStates = {};  // stores previous states for all buttons
 
+  
   function monitorClickAgreement(buttonID) {
-    // calculate the total number of clicks on the current button
     const totalClicksOnButton = Object.values(buttonClickStates[buttonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
+    const activeParticipants = Object.entries(buttonClickStates[buttonID])
+        .filter(([participantID, isActive]) => isActive)
+        .map(([participantID, _]) => participantID);
 
-    // identify which participants are actively clicking the button
-    const activeParticipants = Object.entries(buttonClickStates[buttonID]).filter(([participantID, isActive]) => isActive).map(([participantID, _]) => participantID);
-
-    // if there's already button under agreement, check its state
     if (agreementButtonID !== null) {
-      const agreementCurrentSum = Object.values(buttonClickStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
+        const agreementCurrentSum = Object.values(buttonClickStates[agreementButtonID]).reduce((acc, curr) => acc + (curr ? 1 : 0), 0);
 
-      // if agreement condition (2+ clicks) is broken, stop the timer and clear agreement
-      if (agreementCurrentSum < 2) {
-              stopAgreementTimer();
-              console.log(`Agreement broken on button ${agreementButtonID}`);
-              agreementButtonID = null;  // clear the agreement state
-      }
+        if (agreementCurrentSum < 2) {
+            stopAgreementTimer();
+            console.log(`Agreement broken on button ${agreementButtonID}`);
+            agreementButtonID = null;
+        }
     }
 
     liveSend({ numInAgreement: totalClicksOnButton, activeParticipants: activeParticipants });
 
-    // if the current button reaches an agreement condition and no other agreement is active, stop the agreement
     if (totalClicksOnButton >= 2 && agreementButtonID === null) {
-      startAgreementTimer();
-      console.log(`Agreement started on button ${buttonID}`);
-      agreementButtonID = buttonID;
+        startAgreementTimer();
+        console.log(`Agreement started on button ${buttonID}`);
+        agreementButtonID = buttonID;
     }
 
-    // store the current state for the next update
     prevButtonStates[buttonID] = { ...buttonClickStates[buttonID] };
-  }
+}
 
 
   //map playerId to a specific color scheme from perspective of each player
@@ -533,6 +742,21 @@
   }
 
 
+  //returns values mapping based on playerID to be shown in hover values
+  function mapValuesBasedOnPlayer(values, playerId) {
+    // This function will return the values array reordered based on the player ID
+    switch(playerId) {
+      case 1: // Original order for Player 1
+        return [values[1],values[2],values[0]]
+      case 2: // Switch positions for Player 2 perspective
+        return [values[2], values[0], values[1]];
+      case 3: // Different order for Player 3
+        return [values[0], values[1], values[2]];
+      default:
+        return [values[1],values[2],values[0]]
+    }
+  }
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   // POSITION ELEMENTS (HOVER VALUE AND CORNER LABELS)
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -546,6 +770,7 @@
   // HELPER FUNCTIONS
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   function updatePlayerClickState(btnState, playerId) {
+    console.log("this is the btnstate: ", btnState);
     if (playerId === 1) {
         btnState.clickedByUser1 = !btnState.clickedByUser1;
     } else if (playerId === 2) {
@@ -576,6 +801,76 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
+  .box{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: min-content;
+    min-width: min-content;
+  }
+
+
+  #results-box {
+    display: none; /* Initially hidden */
+    max-width: 450px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Add a subtle animation effect when it appears */
+#results-box.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.results-header {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.results-info {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.highlight {
+    font-weight: bold;
+    font-size: 20px;
+    color: #e74c3c; /* Red accent color */
+}
+
+.next-button {
+    background: #3498db; /* Blue shade */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    display: inline-block;
+    margin-top: 15px;
+}
+
+.next-button:hover {
+    background: #2980b9; /* Darker blue on hover */
+    transform: translateY(-2px);
+}
+
+.next-button:active {
+    background: #1f6aa5; /* Even darker blue on click */
+    transform: translateY(1px);
+}
   
   body {
     background: #f2f4f6;
@@ -583,6 +878,8 @@
     font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
+    min-height: min-content;
+    min-width: min-content;
   }
 
   .icon-wrapper {
@@ -719,6 +1016,27 @@
     font-weight: bold;
   }
 
+  button[name="finish"] {
+  background-color: #4caf50;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button[name="finish"] h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: normal;
+}
+
+button[name="finish"]:hover {
+  background-color: #43a047;
+}
+
   #participant2Label {
     top: 0;
     left: 0;
@@ -819,5 +1137,67 @@
     left: 50%;
     transform: translate(-50%, 10px);
   }
+  .exercise-list {
+    list-style-type: none;
+    padding: 0;
+    max-width: 800px;
+    margin: auto;
+}
+
+
+
+  .results-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+  }
+
+  .payoff-box {
+      margin-top: 20px;
+      padding: 20px;
+      background: #edf6ee;
+      border: 2px solid #52b788;
+      border-radius: 12px;
+      text-align: center;
+      width: 100%;
+  }
+
+  .payoff-label {
+      font-size: 18px;
+      color: #276749;
+      margin-bottom: 5px;
+  }
+
+  .payoff-amount {
+      font-size: 28px;
+      font-weight: bold;
+      color: #276749;
+  }
+
+  .next-button {
+      margin-top: 30px;
+      background-color: #0056b3;
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+  }
+
+  .next-button:hover {
+      background-color: #003d80;
+  }
+
+  .exercise-checkbox {
+    visibility: hidden; /* Hides the checkbox but keeps it in the layout */
+    position: absolute; /* Ensures it does not take up space */
+}
+
+
+
 </style>
 {{ formfields }} {{ endblock }}
