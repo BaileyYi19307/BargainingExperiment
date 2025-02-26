@@ -23,7 +23,7 @@ SESSION_CONFIGS = [
         totalNodes=66,  
         totalMoney=54,  
         initialCurrencyValue=3.00,  
-        ratificationTime=10,  
+        ratificationTime=2,  
         timeLimit=3,  
         num_rounds=3,  # Total rounds (1 for each phase + repeated rounds)
     ),

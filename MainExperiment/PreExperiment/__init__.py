@@ -52,4 +52,4 @@ class Results(Page):
     pass
 
 
-page_sequence = [GenderSelection,MPL]
+page_sequence = [GenderSelection, MPL]

@@ -450,7 +450,7 @@ class CompulsoryOffer(Page):
 
 
 
-page_sequence = [WaitingRoom, Main_Interface, Round_Payoffs]
+page_sequence = [WaitingRoom, CompulsoryOffer, Main_Interface, Round_Payoffs]
 
 
 #Gender Selection, Waiting Room,Multi price list and then the repeated rounds part should be Main_Interface, Round Payoffs, and then their should be experiment_end (not repeated)
