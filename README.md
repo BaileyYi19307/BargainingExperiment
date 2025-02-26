@@ -22,17 +22,6 @@ git clone https://github.com/BaileyYi19307/BargainingExperiment.git
    otree devserver
    ```
 
-### 3. Running the Tutorial Experiment
-1. Navigate to the **TutorialExperiment** directory:
-   ```bash
-   cd BargainingExperiment/TutorialExperiment
-   ```
-
-2. Run the tutorial using oTree's development server:
-   ```bash
-   otree devserver
-   ```
-
 ## Modifying the Triangle Parameters
 To modify the parameters of the triangle generated in the experiment, you need to adjust the **config section** within the code. The configuration settings are located in the relevant files and allow you to control aspects of the triangle's behavior for the experiment.
 
