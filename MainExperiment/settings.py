@@ -1,31 +1,31 @@
 from os import environ
 
 SESSION_CONFIGS = [
-    # dict(
-    #     name="Tutorial",
-    #     display_name="Tutorial Walkthrough",
-    #     app_sequence=['Tutorial'],
-    #     num_demo_participants=3,
-    #     totalNodes=66,  
-    #     totalMoney=54,  
-    #     timeLimit=1,
-    #     initialCurrencyValue=3.00,  
-    #     ratificationTime=2,
-    #     num_rounds=3,  # Total rounds (1 for each phase + repeated rounds)
+    dict(
+        name="Tutorial",
+        display_name="Tutorial",
+        app_sequence=['Tutorial'],
+        num_demo_participants=3,
+        totalNodes=66,  
+        totalMoney=54,  
+        timeLimit=1,
+        initialCurrencyValue=3.00,  
+        ratificationTime=10,
+        num_rounds=3,  
   
-    # ),
+    ),
     dict(
         name="Main_Experiment",
         display_name="Triangle Experiment",
-        app_sequence=['Tutorial','PreExperiment','Main_Experiment','ExperimentEnd'], 
+        app_sequence=['PreExperiment','Main_Experiment','ExperimentEnd'], 
         num_demo_participants=3,
-        compulsory_offer_treatment=True,  
+        compulsory_offer_treatment=False,  
         totalNodes=66,  
         totalMoney=54,  
         initialCurrencyValue=3.00,  
-        ratificationTime=2,  
+        ratificationTime=10,  
         timeLimit=3,  
-        num_rounds=3,  # Total rounds (1 for each phase + repeated rounds)
+        num_rounds=3,
     ),
 ]
 
@@ -57,7 +57,7 @@ SESSION_CONFIG_DEFAULTS = dict(
 )
 
 
-PARTICIPANT_FIELDS = ['expiry','gender','mpl_choices','round_payoffs']
+PARTICIPANT_FIELDS = ['expiry','gender','mpl_choices','round_payoffs','taskList','alreadyFinished','howManyCompleted']
 # SESSION_FIELDS = ['who_in_agreement','numAgree','beginningTime','playersClicking','whosClickedWhat','buttonClickStates','experiment_started', 'submittedFirstOffer']
 SESSION_FIELDS = [
     'who_in_agreement', 'numAgree', 'beginningTime', 'previd', 'taskList', 

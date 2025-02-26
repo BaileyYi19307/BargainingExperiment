@@ -61,19 +61,18 @@ class TutorialPage2(Page):
     def live_method(player, data):
         session = player.session
 
-        session.vars.setdefault('howManyCompleted', {})
+        player.participant.vars.setdefault('howManyCompleted', {})
 
         #set up the task list
         if 'getTaskList' in data:
-            return {0:{'howManyCompleted':session.vars['howManyCompleted']}}
+            return {player.id_in_group:{'howManyCompleted':player.participant.vars['howManyCompleted']}}
 
         # handle button click event
         if 'buttonClicked' in data:
-            session.vars['howManyCompleted'][data['whichTask']]=True
-            print(session.vars['howManyCompleted'])
-            if (len(session.vars['howManyCompleted']) == 2 and all(session.vars['howManyCompleted'])):
+            player.participant.vars['howManyCompleted'][data['whichTask']]=True
+            if (len(player.participant.vars['howManyCompleted']) == 2 and all(player.participant.vars['howManyCompleted'])):
                 print("All the tasks have been completed")
-                return {0:{'allTasksCompleted':1}}
+                return {player.id_in_group:{'allTasksCompleted':1}}
 
 
 
@@ -111,8 +110,8 @@ class TutorialPage4(Page):
         session = player.session
         groupId = player.group
         session.vars.setdefault('beginningTime', 0)
-        session.vars.setdefault('taskList', {})
-        session.vars.setdefault('alreadyFinished', False)
+        player.participant.vars.setdefault('taskList', {})
+        player.participant.vars.setdefault('alreadyFinished', False)
 
 
         if "botsChoose" in data:
@@ -178,14 +177,12 @@ class TutorialPage4(Page):
         print("checking the data", data)
         if 'getMeTaskList' in data:
             print("HI IM IN GET ME TASK LIST")
-            return {player.id_in_group:{'taskList':session.vars['taskList'],'alreadyFinished':session.vars['alreadyFinished']}}
+            return {player.id_in_group:{'taskList':player.participant.taskList,'alreadyFinished':player.participant.alreadyFinished}}
 
 
         if 'buttonClicked' in data:
             print('Button was clicked')
-            session.vars['taskList'][data['whichTask']]=True
-            print(f"The first task is{session.vars['taskList'][data['whichTask']]}")
-            print(session.vars['taskList'])
+            player.participant.taskList[data['whichTask']]=True
 
 
         # handle button click event
@@ -194,11 +191,11 @@ class TutorialPage4(Page):
             player_id = player.id_in_group
             return {player_id: {"user_clicked":data["button_id"]}}
     
-        if not session.vars['alreadyFinished'] and len(session.vars['taskList']) == 4 and all(session.vars['taskList'].values()):
+        if not player.participant.alreadyFinished and len(player.participant.taskList) == 4 and all(player.participant.taskList.values()):
             # All the tasks have been completed for the first time
             print("All the tasks have been completed")
-            session.vars['alreadyFinished'] = True
-            return {player.id_in_group: {'allTasksCompleted': 1, 'tasksDone':session.vars['taskList']}}
+            player.participant.alreadyFinished = True
+            return {player.id_in_group: {'allTasksCompleted': 1, 'tasksDone':player.participant.taskList}}
 
 
 
