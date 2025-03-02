@@ -23,11 +23,16 @@ class Player(BasePlayer):
     selected_rounds=models.LongStringField(initial="")
     results_data=models.LongStringField(initial="")
     total_payment=models.CurrencyField(initial=0)
+    bonus=models.CurrencyField(initial=0)
 
 
 # PAGES
 
 class Experiment_End(Page):
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        player.bonus=player.total_payment
 
     @staticmethod
     def vars_for_template(player):
@@ -94,6 +99,8 @@ class Experiment_End(Page):
         player.selected_rounds=json.dumps(rounds_selected)
         player.results_data=json.dumps(results_data[player.id_in_group])
         player.total_payment=total_payment
+        player.participant.payoff = total_payment
+
         
         return {
             'selected_rounds': rounds_selected,

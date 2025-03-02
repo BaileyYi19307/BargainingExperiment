@@ -331,8 +331,6 @@ class CompulsoryOffer(Page):
                 for player_id in [1, 2, 3]:
                     p = groupId.get_player_by_id(player_id)
                     p_payoff = data['payoffs'].get(f'p{player_id}_points', 0) 
-                    p.payoff = p_payoff
-
 
 
         #how many players have submitted a first offer?
